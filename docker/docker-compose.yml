@@ -1,0 +1,9 @@
+version: "3.8"
+services:
+  coral_inference:
+    build: .
+    container_name: coral_inference
+    # USB Coral Accelerator에 접근할 수 있도록 USB 디바이스를 마운트합니다.
+    devices:
+      - "/dev/bus/usb:/dev/bus/usb"
+    restart: unless-stopped
