@@ -1,27 +1,24 @@
-# Raspberry Pi 4에 맞는 ARM 아키텍처용 Python 3.9 기반 슬림 이미지를 사용합니다.
 FROM python:3.9-slim-bullseye
 
-# 비대화형 모드로 설정
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 필수 시스템 패키지와 HTTPS 전송 관련 패키지 설치
+# 필수 시스템 패키지 설치 (gnupg 추가)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-transport-https \
     ca-certificates \
     curl \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Coral 패키지 저장소를 추가하고 GPG키를 등록한 후 libedgetpu1-std 패키지를 설치합니다.
+# Coral 패키지 저장소 추가 및 GPG 키 등록 후 libedgetpu1-std 설치
 RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | tee /etc/apt/sources.list.d/coral-edgetpu.list && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
     apt-get update && apt-get install -y --no-install-recommends libedgetpu1-std
 
-# pycoral와 opencv-python (예제 실행에 필요한 라이브러리) 설치
+# pycoral와 opencv-python 설치
 RUN pip install --no-cache-dir pycoral opencv-python
 
-# 작업 디렉토리 설정 및 코드 복사
 WORKDIR /app
 COPY . /app
 
-# 기본 커맨드 : 'inference_only.py'를 실행합니다.
-# CMD ["python", "inference_only.py"]
+# CMD ["/bin/bash"]
