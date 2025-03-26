@@ -2,23 +2,35 @@ FROM python:3.9-slim-bullseye
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 필수 시스템 패키지 설치 (gnupg 추가)
+# 필수 시스템 패키지 설치 (GDAL 관련 패키지 포함)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-transport-https \
     ca-certificates \
     curl \
     gnupg \
+    libgdal-dev \
+    gdal-bin \
+    gcc \
+    python3-dev \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
+
+# GDAL 환경 변수 설정
+ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
+ENV C_INCLUDE_PATH=/usr/include/gdal
 
 # Coral 패키지 저장소 추가 및 GPG 키 등록 후 libedgetpu1-std 설치
 RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | tee /etc/apt/sources.list.d/coral-edgetpu.list && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
-    apt-get update && apt-get install -y --no-install-recommends libedgetpu1-std
+    apt-get update && apt-get install -y --no-install-recommends libedgetpu1-std && \
+    rm -rf /var/lib/apt/lists/*
 
-# pycoral와 opencv-python 설치
-RUN pip install --no-cache-dir pycoral opencv-python
+# pip 업그레이드
+RUN pip install --upgrade pip
+
+# pycoral와 opencv-python 설치 (GDAL 문제 해결을 위해 setuptools, wheel 추가)
+RUN pip install --no-cache-dir setuptools wheel \
+    && pip install --no-cache-dir pycoral opencv-python
 
 WORKDIR /app
 COPY . /app
-
-# CMD ["/bin/bash"]
