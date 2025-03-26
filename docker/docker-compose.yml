@@ -7,5 +7,8 @@ services:
     container_name: coral_inference
     devices:
       - "/dev/bus/usb:/dev/bus/usb"
+    volumes:
+      - "/mnt/usbdrive:/workspace"
     command: tail -f /dev/null  # 컨테이너가 종료되지 않도록 유지
     restart: unless-stopped
+
