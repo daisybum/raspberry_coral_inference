@@ -9,6 +9,7 @@ services:
       - "/dev/bus/usb:/dev/bus/usb"
     volumes:
       - "/mnt/usbdrive:/workspace"
+      - "../../raspberry_coral_inference:/app/code"
     command: tail -f /dev/null  # 컨테이너가 종료되지 않도록 유지
     restart: unless-stopped
 
