@@ -40,8 +40,8 @@ def compute_metrics(gt, pred, num_classes):
     }
 
 # 경로 설정
-annotations_path = '/media/shpark/new-volumn/merged_all/test_annotations.coco.json'
-image_dir = '/media/shpark/new-volumn/merged_all'
+annotations_path = '/workspace/merged_all/test_annotations.coco.json'
+image_dir = '/workspace/merged_all'
 model_path = 'model_quant_fixed_edgetpu.tflite'
 
 # COCO JSON 로드
