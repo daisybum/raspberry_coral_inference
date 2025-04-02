@@ -1,15 +1,22 @@
-version: "3.8"
+version: '3.9'
 services:
   coral_inference:
     build:
-      context: ..
+      context: ..                  # 도커 빌드 컨텍스트를 상위 폴더로 설정
       dockerfile: ./docker/Dockerfile
     container_name: coral_inference
+    
+    # Coral USB 디바이스에 접근할 수 있도록 설정
     devices:
       - "/dev/bus/usb:/dev/bus/usb"
+
+    # 호스트 ↔ 컨테이너 간 데이터 폴더 공유
     volumes:
-      - "/mnt/usbdrive:/workspace"
+      - "/mnt/usb:/workspace"
       - "../../raspberry_coral_inference:/app/code"
-    command: tail -f /dev/null  # 컨테이너가 종료되지 않도록 유지
+
+    # 컨테이너가 바로 종료되지 않도록 유지
+    command: tail -f /dev/null
     restart: unless-stopped
+
 
