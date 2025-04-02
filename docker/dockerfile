@@ -1,8 +1,10 @@
-FROM python:3.8-slim-bullseye
+# Raspberry Pi Bullseye 64bit 환경용 Python 3.9 슬림 베이스 이미지
+FROM arm64v8/python:3.9-slim-bullseye
 
+# 1) 비대화식 모드 설정
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 1) 필수 시스템 패키지 설치 (GDAL 포함)
+# 2) 필수 시스템 패키지 설치 (GDAL 포함)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-transport-https \
     ca-certificates \
@@ -15,28 +17,31 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# 2) GDAL 환경 변수 설정
+# 3) GDAL 환경 변수 설정
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
 ENV C_INCLUDE_PATH=/usr/include/gdal
 
-# 3) Coral EdgeTPU 라이브러리 설치 (USB 연결용)
+# 4) Coral EdgeTPU 레포지토리 추가 및 pycoral 설치
 RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" \
     | tee /etc/apt/sources.list.d/coral-edgetpu.list && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
-    apt-get update && apt-get install -y --no-install-recommends libedgetpu1-std && \
+    apt-get update && \
+    apt-get install -y \
+    python3-pycoral \
+    python3-pip \
+    python3-venv && \
     rm -rf /var/lib/apt/lists/*
 
-# 4) pip 최신화 + 필수 빌드 도구 설치 (setuptools, wheel)
-RUN pip install --upgrade pip setuptools wheel
+# 5) pip 최신화 + 빌드도구 설치
+RUN pip3 install --upgrade pip setuptools wheel
 
-# 5) Python 라이브러리 설치
-#    (pycoral, opencv, tensorflow, tqdm, pillow, pycocotools 등)
-RUN pip install --no-cache-dir \
-    pycoral \
+# 6) 추가 Python 라이브러리 설치
+RUN pip3 install --no-cache-dir \
     opencv-python \
     tensorflow \
     tqdm \
     pillow \
     pycocotools
 
+# 7) 작업 디렉터리 설정
 WORKDIR /app
