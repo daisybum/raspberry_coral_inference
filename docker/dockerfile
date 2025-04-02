@@ -29,19 +29,23 @@ RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" \
     apt-get install -y \
     python3-pycoral \
     python3-pip \
-    python3-venv && \
-    rm -rf /var/lib/apt/lists/*
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/*
 
-# 5) pip 최신화 + 빌드도구 설치
-RUN pip3 install --upgrade pip setuptools wheel
+# 5) python 명령을 python3와 동일하게 연결
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
+    update-alternatives --set python /usr/bin/python3
 
-# 6) 추가 Python 라이브러리 설치
-RUN pip3 install --no-cache-dir \
+# 6) pip 최신화 + 빌드 도구 설치
+RUN python -m pip install --upgrade pip setuptools wheel
+
+# 7) 추가 Python 라이브러리 설치
+RUN python -m pip install --no-cache-dir \
     opencv-python \
     tensorflow \
     tqdm \
     pillow \
     pycocotools
 
-# 7) 작업 디렉터리 설정
+# 8) 작업 디렉터리 설정
 WORKDIR /app
