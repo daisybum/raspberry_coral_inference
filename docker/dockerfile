@@ -1,5 +1,5 @@
-# Raspberry Pi Bullseye 64bit 환경용 Python 3.9 슬림 베이스 이미지
-FROM arm64v8/python:3.9-slim-bullseye
+# Raspberry Pi Bullseye 64bit 환경용 Python 3.8 슬림 베이스 이미지
+FROM arm64v8/python:3.8-slim-bullseye
 
 # 1) 비대화식 모드 설정
 ENV DEBIAN_FRONTEND=noninteractive
