@@ -1,51 +1,38 @@
 # Raspberry Pi Bullseye 64bit 환경용 Python 3.8 슬림 베이스 이미지
 FROM arm64v8/python:3.8-slim-bullseye
 
-# 1) 비대화식 모드 설정
+# 1) 비대화식 모드 설정 (APT 설치 시 대화창 방지)
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 2) 필수 시스템 패키지 설치 (GDAL 포함)
+# 2) Coral EdgeTPU 저장소 추가 및 필수 패키지 설치
 RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-transport-https \
     ca-certificates \
     curl \
-    gnupg \
-    libgdal-dev \
-    gdal-bin \
-    gcc \
-    python3-dev \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# 3) GDAL 환경 변수 설정
-ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
-ENV C_INCLUDE_PATH=/usr/include/gdal
-
-# 4) Coral EdgeTPU 레포지토리 추가 및 pycoral 설치
-RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" \
-    | tee /etc/apt/sources.list.d/coral-edgetpu.list && \
+    gnupg && \
+    echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" \
+      | tee /etc/apt/sources.list.d/coral-edgetpu.list && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
-    apt-get update && \
-    apt-get install -y \
+    apt-get update && apt-get install -y --no-install-recommends \
+    libedgetpu1-std \
     python3-pycoral \
+    python3-tflite-runtime \
     python3-pip \
-    python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
-# 5) python 명령을 python3와 동일하게 연결
+# 3) python 명령어를 python3와 동일하게 연결
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
     update-alternatives --set python /usr/bin/python3
 
-# 6) pip 최신화 + 빌드 도구 설치
-RUN python -m pip install --upgrade pip setuptools wheel
+# 4) pip 최신화 + 추가 파이썬 라이브러리 설치
+RUN python -m pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir \
+        opencv-python \
+        tensorflow \
+        tqdm \
+        pillow \
+        pycocotools
 
-# 7) 추가 Python 라이브러리 설치
-RUN python -m pip install --no-cache-dir \
-    opencv-python \
-    tensorflow \
-    tqdm \
-    pillow \
-    pycocotools
-
-# 8) 작업 디렉터리 설정
+# 5) 작업 디렉터리 설정
 WORKDIR /app
+
