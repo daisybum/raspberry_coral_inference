@@ -21,7 +21,7 @@ interpreter.allocate_tensors()
 
 # 2) Check model input size
 input_width, input_height = common.input_size(interpreter)
-print(f"Model input size: {input_width} x {input_height}")
+#print(f"Model input size: {input_width} x {input_height}")
 
 # 3) Iterate through images in COCO data and perform inference
 for image_info in coco_data['images']:
@@ -35,7 +35,7 @@ for image_info in coco_data['images']:
         print(f"[WARN] Image file not found: {img_path}")
         continue
 
-    print(f"Processing: {img_path}")
+    #print(f"Processing: {img_path}")
     
     # (1) Load and preprocess image (resize to model input size)
     img_pil = Image.open(img_path).convert('RGB')
