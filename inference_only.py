@@ -45,7 +45,7 @@ for image_info in coco_data['images']:
     common.set_input(interpreter, resized_img)
     interpreter.invoke()
     mask = segment.get_output(interpreter)
-    inference_time = time.time() - start_time  # Calculate inference time
+    processing_time = time.time() - start_time  # Calculate inference time
     if mask.ndim == 3:
         mask = np.argmax(mask, axis=-1)
     
