@@ -7,7 +7,7 @@ from pycoral.utils import edgetpu
 from pycoral.adapters import common, segment
 
 # 0) Path settings
-annotations_path = '/workspace/merged_all/test_annotations.coco.json'
+annotations_path = '/workspace/merged_all/_annotations.coco.json'
 image_dir = '/workspace/merged_all'
 model_path = 'model_quant_fixed_edgetpu.tflite'
 
