@@ -19,7 +19,7 @@ image_dir = '/workspace/merged_all'
 model_path = 'model_quant_fixed_edgetpu.tflite'
 
 # Folder to save segmentation visualization results (if needed)
-output_dir = 'output_visual'
+output_dir = '/workspace/output_visual'
 os.makedirs(output_dir, exist_ok=True)
 
 # 1) Load TFLite model for Edge TPU and initialize interpreter
