@@ -33,7 +33,8 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir \
         tqdm \
         pillow \
-        pycocotools
+        pycocotools \
+        tensorflow
 
 # 5) 작업 디렉터리 설정
 WORKDIR /app
