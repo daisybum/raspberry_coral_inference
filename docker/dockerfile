@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pycoral \
     python3-tflite-runtime \
     python3-pip \
+    pkg-config \
+    libhdf5-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # 3) python 명령어를 python3와 동일하게 연결
@@ -35,4 +37,3 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
 
 # 5) 작업 디렉터리 설정
 WORKDIR /app
-
