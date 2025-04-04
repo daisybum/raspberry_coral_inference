@@ -7,8 +7,8 @@ from pycoral.utils import edgetpu
 from pycoral.adapters import common, segment
 
 # 0) Path settings
-annotations_path = '/workspace/merged_all/_annotations.coco.json'
-image_dir = '/workspace/merged_all'
+annotations_path = '/workspace/moveawheel_data/COCO/test_without_street.json'
+image_dir = '/workspace/moveawheel_data/images'
 model_path = 'model_quant_fixed_edgetpu.tflite'
 
 # Load COCO format JSON file
