@@ -40,8 +40,8 @@ def compute_metrics(gt, pred, num_classes):
     }
 
 # 경로 설정
-annotations_path = '/workspace/merged_all/test_annotations.coco.json'
-image_dir = '/workspace/merged_all'
+annotations_path = '/workspace/moveawheel_data/COCO/test_without_street.json'
+image_dir = '/workspace/moveawheel_data/images'
 model_path = 'model_quant_fixed_edgetpu.tflite'
 
 # COCO JSON 로드
