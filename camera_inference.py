@@ -112,32 +112,20 @@ try:
         interpreter.invoke()
         mask = segment.get_output(interpreter)
 
-        # 디버깅 출력
         print("Raw mask info:")
         print("Type:", type(mask))
         if hasattr(mask, 'shape'):
             print("Shape:", mask.shape)
-        else:
-            print("Shape: None")
-        #if hasattr(mask, 'dtype'):
-        #     print("Dtype: %s" % mask.dtype)
-        # else:
-        #     print("Dtype: None")
         
-        # 만약 mask가 4차원 (예: (1, 513, 513, num_classes)) 이라면 첫 번째 배치만 꺼내기
+        # 배치 차원이 있다면 제거
         if isinstance(mask, np.ndarray) and mask.ndim == 4:
-            # batch 차원 제거
             mask = mask[0]
             print("After removing batch dim:", mask.shape, mask.dtype)
         
-        # 채널 차원에 대해 argmax (num_classes 쪽)
+        # 3차원 배열일 경우에만 argmax 수행 (채널 축 제거)
         if isinstance(mask, np.ndarray) and mask.ndim == 3:
             mask = np.argmax(mask, axis=-1)
             print("After argmax:", mask.shape, mask.dtype)
-        
-        # 이미 mask가 numpy 배열이고 shape이 (513, 513, 6)이므로 argmax 진행
-        mask = np.argmax(mask, axis=-1)
-        print("After argmax:", mask.shape)
         
         # 최종적으로 mask가 2D 배열이고 dtype이 float 또는 int 계열이면 np.uint8 변환
         if isinstance(mask, np.ndarray):
