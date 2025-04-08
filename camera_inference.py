@@ -3,7 +3,7 @@ import time
 import numpy as np
 from PIL import Image
 import matplotlib
-matplotlib.use('Agg')  # GUI 없는 환경에서 백엔드 설정
+matplotlib.use('Agg')  # Set backend for environments without a GUI
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
@@ -21,11 +21,11 @@ os.makedirs(output_dir, exist_ok=True)
 interpreter = edgetpu.make_interpreter(model_path)
 interpreter.allocate_tensors()
 input_width, input_height = common.input_size(interpreter)
-print(f"모델 입력 크기: {input_width} x {input_height}")
+print(f"Model input size: {input_width} x {input_height}")
 
 # 2) 색상 팔레트 및 클래스 이름 (0: 배경, 1: dry, 2: humid, 3: slush, 4: snow, 5: wet)
 palette = np.array([
-    [0, 0, 0],         # 0: 배경
+    [0, 0, 0],         # 0: background
     [113, 193, 255],   # 1: dry
     [255, 219, 158],   # 2: humid
     [125, 255, 238],   # 3: slush
@@ -62,7 +62,7 @@ def process_image(img_path):
     # 이미지 로드 및 원본 크기 얻기
     img_pil = Image.open(img_path).convert('RGB')
     orig_width, orig_height = img_pil.size
-    print(f"처리할 이미지: {img_path} (원본 크기: {orig_width}x{orig_height})")
+    print(f"Processing image: {img_path} (Original size: {orig_width}x{orig_height})")
     
     # (1) 모델 입력 크기로 이미지 리사이즈 (LANCZOS 필터 사용)
     resized_img = img_pil.resize((input_width, input_height), resample=Image.LANCZOS)
@@ -88,21 +88,21 @@ def process_image(img_path):
     
     # (6) Matplotlib을 활용해 3 부분(원본, 마스크, 오버레이)으로 시각화
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-    fig.suptitle(f"세그멘테이션 시각화 - {os.path.basename(img_path)}", fontsize=16)
+    fig.suptitle(f"Segmentation Visualization - {os.path.basename(img_path)}", fontsize=16)
     
     # 원본 이미지 서브플롯
     axes[0].imshow(orig_np)
-    axes[0].set_title("원본 이미지", fontsize=14)
+    axes[0].set_title("Original Image", fontsize=14)
     axes[0].axis("off")
     
     # 세그멘테이션 마스크 서브플롯
     axes[1].imshow(color_mask_np)
-    axes[1].set_title("세그멘테이션 마스크", fontsize=14)
+    axes[1].set_title("Segmentation Mask", fontsize=14)
     axes[1].axis("off")
     
     # 오버레이 이미지 서브플롯
     axes[2].imshow(overlay_np)
-    axes[2].set_title("오버레이", fontsize=14)
+    axes[2].set_title("Overlay", fontsize=14)
     axes[2].axis("off")
     
     # 범례 추가 (오른쪽에 배치)
@@ -125,8 +125,8 @@ def process_image(img_path):
     plt.close(fig)
     
     elapsed = time.time() - start_time
-    print(f"시각화 저장: {out_fig_path}")
-    print(f"이미지 처리 시간: {elapsed:.2f}초")
+    print(f"Visualization saved: {out_fig_path}")
+    print(f"Image processing time: {elapsed:.2f} seconds")
     print("-" * 50)
 
 # 6) 30초 간격으로 이미지 캡처 및 처리하는 메인 루프
@@ -138,15 +138,15 @@ while True:
     
     # libcamera를 사용해 이미지 캡처 (GUI 없이 캡처)
     capture_cmd = f"libcamera-still -n -o {img_path} --width 1640 --height 1232"
-    print(f"[정보] 이미지 캡처 시작: {capture_cmd}")
+    print(f"[INFO] Starting image capture: {capture_cmd}")
     os.system(capture_cmd)
     
     # 캡처된 이미지가 존재하면 추론 및 시각화 실행
     if os.path.exists(img_path):
         process_image(img_path)
     else:
-        print(f"[경고] 이미지 캡처 실패: {img_path} 파일이 존재하지 않음")
+        print(f"[WARN] Image capture failed: {img_path} file not found")
     
     # 30초 대기 후 다음 캡처 실행
-    print("30초 대기 중...\n")
+    print("Waiting for 30 seconds...\n")
     time.sleep(30)
