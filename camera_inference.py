@@ -25,7 +25,7 @@ print(f"모델 입력 크기: {input_width} x {input_height}")
 
 # 2) 색상 팔레트 및 클래스 이름 (0: 배경, 1: dry, 2: humid, 3: slush, 4: snow, 5: wet)
 palette = np.array([
-    [0, 0, 0],         # 0: background
+    [0, 0, 0],         # 0: 배경
     [113, 193, 255],   # 1: dry
     [255, 219, 158],   # 2: humid
     [125, 255, 238],   # 3: slush
@@ -88,21 +88,21 @@ def process_image(img_path):
     
     # (6) Matplotlib을 활용해 3 부분(원본, 마스크, 오버레이)으로 시각화
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-    fig.suptitle(f"Segmentation Visualization - {os.path.basename(img_path)}", fontsize=16)
+    fig.suptitle(f"세그멘테이션 시각화 - {os.path.basename(img_path)}", fontsize=16)
     
     # 원본 이미지 서브플롯
     axes[0].imshow(orig_np)
-    axes[0].set_title("Original Image", fontsize=14)
+    axes[0].set_title("원본 이미지", fontsize=14)
     axes[0].axis("off")
     
     # 세그멘테이션 마스크 서브플롯
     axes[1].imshow(color_mask_np)
-    axes[1].set_title("Segmentation Mask", fontsize=14)
+    axes[1].set_title("세그멘테이션 마스크", fontsize=14)
     axes[1].axis("off")
     
     # 오버레이 이미지 서브플롯
     axes[2].imshow(overlay_np)
-    axes[2].set_title("Overlay", fontsize=14)
+    axes[2].set_title("오버레이", fontsize=14)
     axes[2].axis("off")
     
     # 범례 추가 (오른쪽에 배치)
@@ -138,14 +138,14 @@ while True:
     
     # libcamera를 사용해 이미지 캡처 (GUI 없이 캡처)
     capture_cmd = f"libcamera-still -n -o {img_path} --width 1640 --height 1232"
-    print(f"[INFO] 이미지 캡처 시작: {capture_cmd}")
+    print(f"[정보] 이미지 캡처 시작: {capture_cmd}")
     os.system(capture_cmd)
     
     # 캡처된 이미지가 존재하면 추론 및 시각화 실행
     if os.path.exists(img_path):
         process_image(img_path)
     else:
-        print(f"[WARN] 이미지 캡처 실패: {img_path} 파일이 존재하지 않음")
+        print(f"[경고] 이미지 캡처 실패: {img_path} 파일이 존재하지 않음")
     
     # 30초 대기 후 다음 캡처 실행
     print("30초 대기 중...\n")
