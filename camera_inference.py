@@ -107,14 +107,28 @@ try:
         # (E) 모델에 입력 후 추론
         common.set_input(interpreter, resized_img)
         interpreter.invoke()
-        mask = segment.get_output(interpreter)
+       mask = segment.get_output(interpreter)
+
+        # 디버깅용 정보 출력
+        print("Raw mask info:", type(mask), getattr(mask, 'shape', None), getattr(mask, 'dtype', None))
+        
+        # 만약 mask가 4차원, 예: (1, 513, 513, num_classes) 라면 첫 번째 배치만 꺼내고 argmax
+        if mask.ndim == 4:
+            # batch 차원 제거
+            mask = mask[0]
+            print("After removing batch dim:", mask.shape, mask.dtype)
         
         if mask.ndim == 3:
+            # 채널 차원에 대해 argmax (num_classes 쪽)
             mask = np.argmax(mask, axis=-1)
+            print("After argmax:", mask.shape, mask.dtype)
         
-        # (F) 원본 크기 복원
-        orig_width, orig_height = img_pil.size
-        mask_pil = Image.fromarray(mask.astype(np.uint8))
+        # 최종적으로 mask가 2D 배열이고 dtype이 float 또는 int 계열이면 np.uint8 변환 가능
+        mask = mask.astype(np.uint8)
+        print("Final mask shape, dtype:", mask.shape, mask.dtype)
+        
+        # PIL 변환
+        mask_pil = Image.fromarray(mask)
         mask_pil = mask_pil.resize((orig_width, orig_height), resample=Image.NEAREST)
         mask_np = np.array(mask_pil)
         
