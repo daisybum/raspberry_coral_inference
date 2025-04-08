@@ -1,84 +1,163 @@
 import os
 import time
+import json
 import numpy as np
 from PIL import Image
-import matplotlib
-matplotlib.use('Agg')  # GUI 디스플레이 없이 Matplotlib 사용 (Agg 백엔드)
 
-# Picamera2 및 PyCoral 관련 모듈 임포트
-from picamera2 import Picamera2
-from pycoral.utils.edgetpu import make_interpreter
+# GUI 없는 환경용 matplotlib 설정
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
+from pycoral.utils import edgetpu
 from pycoral.adapters import common, segment
 
-# 1) 결과 디렉토리 준비
-os.makedirs("/workspace/captured_images", exist_ok=True)
-os.makedirs("/workspace/output_visual", exist_ok=True)
+############################################################
+# 0) 사전 설정
+############################################################
 
-# 2) 카메라 초기화 및 설정
-picam2 = Picamera2()
-camera_config = picam2.create_still_configuration()  # 기본 스틸 캡처 설정 (해상도 기본값 사용)
-picam2.configure(camera_config)
-picam2.start(show_preview=False)  # 헤드리스 모드: 프리뷰 비활성화
-time.sleep(2)  # 카메라 센서 안정화 대기 (노출 등 조정)
+# (A) 경로 관련
+model_path = 'model_quant_fixed_edgetpu.tflite'
+output_dir = '/workspace/output_visual'
+os.makedirs(output_dir, exist_ok=True)
 
-# 3) PyCoral 세그멘테이션 모델 로드
-MODEL_PATH = "/workspace/model_deeplabv3.tflite"  # 사용자가 준비한 TFLite 세그멘테이션 모델 경로
-interpreter = make_interpreter(MODEL_PATH)
+# (B) TFLite Edge TPU 모델 로드 및 인터프리터 생성
+interpreter = edgetpu.make_interpreter(model_path)
 interpreter.allocate_tensors()
-model_width, model_height = common.input_size(interpreter)  # 모델 입력 해상도 획득
 
-# (선택) 세그멘테이션 결과를 색상화하기 위한 컬러맵 함수 정의
-def create_pascal_label_colormap():
-    colormap = np.zeros((256, 3), dtype=int)
-    indices = np.arange(256, dtype=int)
-    for shift in reversed(range(8)):
-        for channel in range(3):
-            colormap[:, channel] |= ((indices >> channel) & 1) << shift
-        indices >>= 3
-    return colormap
+# (C) 모델 입력 크기 확인
+input_width, input_height = common.input_size(interpreter)
+print(f"Model input size: {input_width} x {input_height}")
 
-def label_to_color_image(label):
-    if label.ndim != 2:
-        raise ValueError("Expect 2-D input label")
-    colormap = create_pascal_label_colormap()
-    if np.max(label) >= len(colormap):
-        raise ValueError("label value too large.")
-    return colormap[label]
+# (D) 색상 팔레트 및 클래스명 정의
+#  0: background, 1: dry, 2: humid, 3: slush, 4: snow, 5: wet
+palette = np.array([
+    [0, 0, 0],         # 0: background
+    [113, 193, 255],   # 1: dry
+    [255, 219, 158],   # 2: humid
+    [125, 255, 238],   # 3: slush
+    [235, 235, 235],   # 4: snow
+    [255, 61, 61]      # 5: wet
+], dtype=np.uint8)
 
-# 4) 주기적 캡처 및 추론 루프
+class_names = ["background", "dry", "humid", "slush", "snow", "wet"]
+
+# (E) 레전드(범례) 생성용 패치
+legend_patches = []
+for i, (r, g, b) in enumerate(palette):
+    legend_color = (r/255.0, g/255.0, b/255.0)
+    legend_patches.append(mpatches.Patch(color=legend_color, label=class_names[i]))
+
+
+############################################################
+# 1) 세그멘테이션 오버레이 함수
+############################################################
+def blend_mask(original_np, mask_np, alpha=0.5):
+    """
+    original_np: (H, W, 3) 원본 이미지 (uint8)
+    mask_np:     (H, W)     모델 추론 결과(클래스 인덱스)
+    alpha:       마스크의 투명도(0~1)
+    """
+    overlay = original_np.copy()
+    color_mask = palette[mask_np]  # (H, W, 3)
+    mask_region = (mask_np != 0)   # 배경(클래스0)은 오버레이 제외
+    
+    overlay[mask_region] = (
+        overlay[mask_region] * (1 - alpha) +
+        color_mask[mask_region] * alpha
+    ).astype(np.uint8)
+    
+    return overlay
+
+
+############################################################
+# 2) 메인 루프: 30초 간격으로 카메라 사진 촬영 → 추론 → 시각화·저장
+############################################################
+
+interval_seconds = 30  # 30초 간격
+
+print("Starting capture and inference every 30 seconds...")
+loop_count = 0
+
 try:
     while True:
-        # (a) 이미지 캡처
-        timestamp = time.strftime("%Y%m%d-%H%M%S")
-        img_path = f"/workspace/captured_images/img_{timestamp}.jpg"
-        picam2.capture_file(img_path)  # 사진 촬영 및 저장&#8203;:contentReference[oaicite:3]{index=3}
+        loop_count += 1
+        
+        # (A) 사진 파일명(타임스탬프)
+        timestamp_str = time.strftime("%Y%m%d_%H%M%S")
+        img_filename = f"capture_{timestamp_str}.jpg"
+        img_path = os.path.join(output_dir, img_filename)
+        
+        # (B) 카메라 촬영(libcamera-still)
+        os.system(f"libcamera-still -n -o {img_path} --width 1640 --height 1232")
+        
+        # (C) 촬영한 이미지 로드
+        if not os.path.exists(img_path):
+            print(f"[WARNING] Image was not generated: {img_path}")
+            time.sleep(interval_seconds)
+            continue
+        
+        print(f"\n[{loop_count}th iteration] New image: {img_path}")
+        img_pil = Image.open(img_path).convert('RGB')
+        
+        # (D) 이미지 전처리(모델 입력 크기에 맞춰 리사이즈)
+        resized_img = img_pil.resize((input_width, input_height), resample=Image.LANCZOS)
+        
+        # (E) 모델에 입력 후 추론
+        common.set_input(interpreter, resized_img)
+        interpreter.invoke()
+        mask = segment.get_output(interpreter)
+        
+        if mask.ndim == 3:
+            mask = np.argmax(mask, axis=-1)
+        
+        # (F) 원본 크기 복원
+        orig_width, orig_height = img_pil.size
+        mask_pil = Image.fromarray(mask.astype(np.uint8))
+        mask_pil = mask_pil.resize((orig_width, orig_height), resample=Image.NEAREST)
+        mask_np = np.array(mask_pil)
+        
+        # (G) 오버레이 이미지 만들기
+        orig_np = np.array(img_pil)
+        overlay_np = blend_mask(orig_np, mask_np, alpha=0.5)
+        
+        # (H) 시각화(원본, 세그멘트마스크, 오버레이) 후 저장
+        fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+        fig.suptitle(f"Segmentation Visualization - {img_filename}", fontsize=16)
+        
+        axes[0].imshow(orig_np)
+        axes[0].set_title("Original Image", fontsize=14)
+        axes[0].axis("off")
+        
+        color_mask_np = palette[mask_np]
+        axes[1].imshow(color_mask_np)
+        axes[1].set_title("Segmentation Mask", fontsize=14)
+        axes[1].axis("off")
+        
+        axes[2].imshow(overlay_np)
+        axes[2].set_title("Overlay", fontsize=14)
+        axes[2].axis("off")
+        
+        legend = fig.legend(
+            handles=legend_patches,
+            loc='center left',
+            bbox_to_anchor=(0.92, 0.5),
+            fontsize=12
+        )
+        legend.set_title("Classes", prop={'size': 14})
+        legend.get_frame().set_edgecolor("black")
+        
+        plt.tight_layout()
+        plt.subplots_adjust(right=0.85)
+        
+        out_fig_path = os.path.join(output_dir, f"{os.path.splitext(img_filename)[0]}_visual.png")
+        fig.savefig(out_fig_path)
+        plt.close(fig)
+        
+        print(f"Visualization result saved: {out_fig_path}")
+        print(f"Waiting {interval_seconds} seconds for next capture...")
+        time.sleep(interval_seconds)
 
-        # (b) 추론을 위해 이미지 로드 및 전처리
-        image = Image.open(img_path).convert("RGB")
-        # 모델 입력 크기로 이미지 리사이즈 (필요 시 모델 비율에 맞게 조정)
-        resized_image = image.resize((model_width, model_height), Image.ANTIALIAS)
-
-        # (c) PyCoral Edge TPU를 이용한 세그멘테이션 추론
-        common.set_input(interpreter, resized_image)    # 입력 텐서 설정&#8203;:contentReference[oaicite:4]{index=4}
-        interpreter.invoke()                            # 추론 실행&#8203;:contentReference[oaicite:5]{index=5}
-        seg_map = segment.get_output(interpreter)       # 세그멘테이션 출력 획득&#8203;:contentReference[oaicite:6]{index=6}
-        if seg_map.ndim == 3:                           # 모델 출력이 (H,W,C)일 경우 다중채널 확률맵으로 간주
-            seg_map = np.argmax(seg_map, axis=-1)       # 채널 축에 argmax를 적용하여 클래스 맵으로 변환
-
-        # (d) 세그멘테이션 결과를 컬러 마스크 이미지로 변환
-        color_mask = label_to_color_image(seg_map).astype(np.uint8)  # 클래스 맵을 색상 이미지로&#8203;:contentReference[oaicite:7]{index=7}
-        mask_img = Image.fromarray(color_mask)
-
-        # (e) 원본 이미지와 마스크를 결합하여 출력 이미지 생성
-        output_img = Image.new("RGB", (model_width * 2, model_height))
-        output_img.paste(resized_image, (0, 0))               # 좌측에 원본(리사이즈된) 이미지 붙여넣기
-        output_img.paste(mask_img, (model_width, 0))          # 우측에 마스크 이미지 붙여넣기&#8203;:contentReference[oaicite:8]{index=8}
-
-        # (f) 결과 이미지 파일로 저장
-        out_path = f"/workspace/output_visual/result_{timestamp}.jpg"
-        output_img.save(out_path)  # 최종 이미지 저장&#8203;:contentReference[oaicite:9]{index=9}
-
-        # (g) 30초 대기 후 다음 루프
-        time.sleep(30)  # 30초마다 주기적으로 실행&#8203;:contentReference[oaicite:10]{index=10}
 except KeyboardInterrupt:
-    picam2.stop()  # 스크립트 종료 시 카메라 정지
+    print("\nCapture and inference loop has been terminated.")
