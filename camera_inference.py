@@ -109,11 +109,20 @@ try:
         interpreter.invoke()
         mask = segment.get_output(interpreter)
 
-        # Debug output with safe printing
+        # 디버깅 출력(각 항목을 개별적으로 출력)
         print("Raw mask info:")
         print("Type:", type(mask))
-        print("Shape:", mask.shape if hasattr(mask, 'shape') else None)
-        print("Dtype:", mask.dtype if hasattr(mask, 'dtype') else None)
+        
+        if hasattr(mask, 'shape'):
+            print("Shape:", mask.shape)
+        else:
+            print("Shape: None")
+        
+        if hasattr(mask, 'dtype'):
+            mask_dtype = mask.dtype  # 임시 변수에 할당
+            print("Dtype:", mask_dtype)
+        else:
+            print("Dtype: None")
         
         # 만약 mask가 4차원, 예: (1, 513, 513, num_classes) 라면 첫 번째 배치만 꺼내고 argmax
         if mask.ndim == 4:
