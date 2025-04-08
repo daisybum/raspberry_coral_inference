@@ -1,37 +1,29 @@
 import os
 import time
-import json
 import numpy as np
 from PIL import Image
-
-# GUI 없는 환경용 matplotlib 설정
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('Agg')  # GUI 없는 환경에서 백엔드 설정
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
 from pycoral.utils import edgetpu
 from pycoral.adapters import common, segment
 
-############################################################
-# 0) 사전 설정
-############################################################
-
-# (A) 경로 관련
+# 0) 경로 및 기본 설정
 model_path = 'model_quant_fixed_edgetpu.tflite'
-output_dir = './output_visual'
+capture_dir = '/workspace/captured_images'
+output_dir = '/workspace/output_visual'
+os.makedirs(capture_dir, exist_ok=True)
 os.makedirs(output_dir, exist_ok=True)
 
-# (B) TFLite Edge TPU 모델 로드 및 인터프리터 생성
+# 1) TFLite 모델 로드 및 Edge TPU interpreter 초기화
 interpreter = edgetpu.make_interpreter(model_path)
 interpreter.allocate_tensors()
-
-# (C) 모델 입력 크기 확인
 input_width, input_height = common.input_size(interpreter)
-print(f"Model input size: {input_width} x {input_height}")
+print(f"모델 입력 크기: {input_width} x {input_height}")
 
-# (D) 색상 팔레트 및 클래스명 정의
-#  0: background, 1: dry, 2: humid, 3: slush, 4: snow, 5: wet
+# 2) 색상 팔레트 및 클래스 이름 (0: 배경, 1: dry, 2: humid, 3: slush, 4: snow, 5: wet)
 palette = np.array([
     [0, 0, 0],         # 0: background
     [113, 193, 255],   # 1: dry
@@ -40,146 +32,121 @@ palette = np.array([
     [235, 235, 235],   # 4: snow
     [255, 61, 61]      # 5: wet
 ], dtype=np.uint8)
-
 class_names = ["background", "dry", "humid", "slush", "snow", "wet"]
 
-# (E) 레전드(범례) 생성용 패치
-legend_patches = []
-for i, (r, g, b) in enumerate(palette):
-    legend_color = (r/255.0, g/255.0, b/255.0)
-    legend_patches.append(mpatches.Patch(color=legend_color, label=class_names[i]))
-
-
-############################################################
-# 1) 세그멘테이션 오버레이 함수
-############################################################
+# 3) blending 함수를 정의 (원본 이미지와 segmentation 마스크를 합성)
 def blend_mask(original_np, mask_np, alpha=0.5):
     """
-    original_np: (H, W, 3) 원본 이미지 (uint8)
-    mask_np:     (H, W)     모델 추론 결과(클래스 인덱스)
-    alpha:       마스크의 투명도(0~1)
+    original_np: (H, W, 3) 원본 이미지 배열 (uint8)
+    mask_np:     (H, W) 클래스 인덱스 배열 (0~5)
+    alpha:       마스크 투명도 (0~1)
     """
     overlay = original_np.copy()
     color_mask = palette[mask_np]  # (H, W, 3)
-    mask_region = (mask_np != 0)   # 배경(클래스0)은 오버레이 제외
-    
+    mask_region = (mask_np != 0)   # 배경이 아닌 부분에 대해서만 합성
     overlay[mask_region] = (
         overlay[mask_region] * (1 - alpha) +
         color_mask[mask_region] * alpha
     ).astype(np.uint8)
-    
     return overlay
 
+# 4) matplotlib 범례 생성: 각 클래스별 색상과 이름 설정
+legend_patches = []
+for i, (r, g, b) in enumerate(palette):
+    legend_color = (r/255, g/255, b/255)  # matplotlib는 0~1 범위 사용
+    legend_patches.append(mpatches.Patch(color=legend_color, label=class_names[i]))
 
-############################################################
-# 2) 메인 루프: 30초 간격으로 카메라 사진 촬영 → 추론 → 시각화·저장
-############################################################
-
-interval_seconds = 30  # 30초 간격
-
-print("Starting capture and inference every 30 seconds...")
-loop_count = 0
-
-# try:
-while True:
-    loop_count += 1
-    
-    # (A) 사진 파일명(타임스탬프)
-    timestamp_str = time.strftime("%Y%m%d_%H%M%S")
-    img_filename = f"capture_{timestamp_str}.jpg"
-    img_path = os.path.join(output_dir, img_filename)
-    
-    # (B) 카메라 촬영(libcamera-still)
-    os.system(f"libcamera-still -n -o {img_path} --width 1640 --height 1232")
-    
-    # (C) 촬영한 이미지 로드
-    if not os.path.exists(img_path):
-        print(f"[WARNING] Image was not generated: {img_path}")
-        time.sleep(interval_seconds)
-        continue
-    
-    print(f"\n[{loop_count}th iteration] New image: {img_path}")
+# 5) 이미지 처리 및 시각화를 위한 함수 정의
+def process_image(img_path):
+    start_time = time.time()
+    # 이미지 로드 및 원본 크기 얻기
     img_pil = Image.open(img_path).convert('RGB')
-    
-    # 원본 이미지 크기 저장
     orig_width, orig_height = img_pil.size
+    print(f"처리할 이미지: {img_path} (원본 크기: {orig_width}x{orig_height})")
     
-    # (D) 이미지 전처리(모델 입력 크기에 맞춰 리사이즈)
+    # (1) 모델 입력 크기로 이미지 리사이즈 (LANCZOS 필터 사용)
     resized_img = img_pil.resize((input_width, input_height), resample=Image.LANCZOS)
     
-    # (E) 모델에 입력 후 추론
+    # (2) 추론: 리사이즈한 이미지를 모델 입력으로 설정 후 추론 수행
     common.set_input(interpreter, resized_img)
     interpreter.invoke()
     mask = segment.get_output(interpreter)
-
-    print("Raw mask info:")
-    print("Type:", type(mask))
-    if hasattr(mask, 'shape'):
-        print("Shape:", mask.shape)
-    
-    # 배치 차원이 있다면 제거
-    if isinstance(mask, np.ndarray) and mask.ndim == 4:
-        mask = mask[0]
-        print("After removing batch dim:", mask.shape, mask.dtype)
-    
-    # 3차원 배열일 경우에만 argmax 수행 (채널 축 제거)
-    if isinstance(mask, np.ndarray) and mask.ndim == 3:
+    if mask.ndim == 3:
         mask = np.argmax(mask, axis=-1)
-        print("After argmax:", mask.shape, mask.dtype)
     
-    # 최종적으로 mask가 2D 배열이고 dtype이 float 또는 int 계열이면 np.uint8 변환
-    if isinstance(mask, np.ndarray):
-        mask = mask.astype(np.uint8)
-        print("Final mask shape, dtype:", mask.shape)
-        
-        # PIL 변환
-        mask_pil = Image.fromarray(mask)
-        mask_pil = mask_pil.resize((orig_width, orig_height), resample=Image.NEAREST)
-        mask_np = np.array(mask_pil)
-        
-        # (G) 오버레이 이미지 만들기
-        orig_np = np.array(img_pil)
-        overlay_np = blend_mask(orig_np, mask_np, alpha=0.5)
-        
-        # (H) 시각화(원본, 세그멘트마스크, 오버레이) 후 저장
-        fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-        fig.suptitle(f"Segmentation Visualization - {img_filename}", fontsize=16)
-        
-        axes[0].imshow(orig_np)
-        axes[0].set_title("Original Image", fontsize=14)
-        axes[0].axis("off")
-        
-        color_mask_np = palette[mask_np]
-        axes[1].imshow(color_mask_np)
-        axes[1].set_title("Segmentation Mask", fontsize=14)
-        axes[1].axis("off")
-        
-        axes[2].imshow(overlay_np)
-        axes[2].set_title("Overlay", fontsize=14)
-        axes[2].axis("off")
-        
-        legend = fig.legend(
-            handles=legend_patches,
-            loc='center left',
-            bbox_to_anchor=(0.92, 0.5),
-            fontsize=12
-        )
-        legend.set_title("Classes", prop={'size': 14})
-        legend.get_frame().set_edgecolor("black")
-        
-        plt.tight_layout()
-        plt.subplots_adjust(right=0.85)
-        
-        out_fig_path = os.path.join(output_dir, f"{os.path.splitext(img_filename)[0]}_visual.png")
-        fig.savefig(out_fig_path)
-        plt.close(fig)
-        
-        print(f"Visualization result saved: {out_fig_path}")
-    else:
-        print("Error: Unable to process the mask output from the model")
-        
-    print(f"Waiting {interval_seconds} seconds for next capture...")
-    time.sleep(interval_seconds)
+    # (3) 추론 결과 마스크를 원본 크기로 리사이즈 (최근접 보간법 사용)
+    mask_pil = Image.fromarray(mask.astype(np.uint8))
+    mask_pil = mask_pil.resize((orig_width, orig_height), resample=Image.NEAREST)
+    mask_np = np.array(mask_pil)
+    
+    # (4) 색상 마스크 생성: 각 픽셀에 대해 클래스 색상 적용
+    color_mask_np = palette[mask_np]
+    
+    # (5) 원본 이미지와 마스크를 합성하여 오버레이 이미지 생성
+    orig_np = np.array(img_pil.resize((orig_width, orig_height), resample=Image.LANCZOS))
+    overlay_np = blend_mask(orig_np, mask_np, alpha=0.5)
+    
+    # (6) Matplotlib을 활용해 3 부분(원본, 마스크, 오버레이)으로 시각화
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+    fig.suptitle(f"Segmentation Visualization - {os.path.basename(img_path)}", fontsize=16)
+    
+    # 원본 이미지 서브플롯
+    axes[0].imshow(orig_np)
+    axes[0].set_title("Original Image", fontsize=14)
+    axes[0].axis("off")
+    
+    # 세그멘테이션 마스크 서브플롯
+    axes[1].imshow(color_mask_np)
+    axes[1].set_title("Segmentation Mask", fontsize=14)
+    axes[1].axis("off")
+    
+    # 오버레이 이미지 서브플롯
+    axes[2].imshow(overlay_np)
+    axes[2].set_title("Overlay", fontsize=14)
+    axes[2].axis("off")
+    
+    # 범례 추가 (오른쪽에 배치)
+    legend = fig.legend(
+        handles=legend_patches,
+        loc='center left',
+        bbox_to_anchor=(0.92, 0.5),
+        fontsize=12,
+        title_fontsize=14
+    )
+    legend.get_frame().set_edgecolor("black")
+    
+    plt.tight_layout()
+    plt.subplots_adjust(right=0.85)
+    
+    # 결과 저장: 캡처 이미지의 파일명에 _visual 추가하여 저장
+    base_name = os.path.splitext(os.path.basename(img_path))[0]
+    out_fig_path = os.path.join(output_dir, f"{base_name}_visual.png")
+    fig.savefig(out_fig_path)
+    plt.close(fig)
+    
+    elapsed = time.time() - start_time
+    print(f"시각화 저장: {out_fig_path}")
+    print(f"이미지 처리 시간: {elapsed:.2f}초")
+    print("-" * 50)
 
-# except KeyboardInterrupt:
-#     print("\nCapture and inference loop has been terminated.")
+# 6) 30초 간격으로 이미지 캡처 및 처리하는 메인 루프
+while True:
+    # 현재 시간 기반의 고유 파일명 생성 (예: capture_20250408_153000.jpg)
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    img_filename = f"capture_{timestamp}.jpg"
+    img_path = os.path.join(capture_dir, img_filename)
+    
+    # libcamera를 사용해 이미지 캡처 (GUI 없이 캡처)
+    capture_cmd = f"libcamera-still -n -o {img_path} --width 1640 --height 1232"
+    print(f"[INFO] 이미지 캡처 시작: {capture_cmd}")
+    os.system(capture_cmd)
+    
+    # 캡처된 이미지가 존재하면 추론 및 시각화 실행
+    if os.path.exists(img_path):
+        process_image(img_path)
+    else:
+        print(f"[WARN] 이미지 캡처 실패: {img_path} 파일이 존재하지 않음")
+    
+    # 30초 대기 후 다음 캡처 실행
+    print("30초 대기 중...\n")
+    time.sleep(30)
