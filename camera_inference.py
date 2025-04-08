@@ -119,10 +119,10 @@ try:
             print("Shape:", mask.shape)
         else:
             print("Shape: None")
-        if hasattr(mask, 'dtype'):
-            # print("Dtype: %s" % mask.dtype)
-        else:
-            print("Dtype: None")
+        #if hasattr(mask, 'dtype'):
+        #     print("Dtype: %s" % mask.dtype)
+        # else:
+        #     print("Dtype: None")
         
         # 만약 mask가 4차원 (예: (1, 513, 513, num_classes)) 이라면 첫 번째 배치만 꺼내기
         if isinstance(mask, np.ndarray) and mask.ndim == 4:
