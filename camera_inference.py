@@ -101,6 +101,9 @@ try:
         print(f"\n[{loop_count}th iteration] New image: {img_path}")
         img_pil = Image.open(img_path).convert('RGB')
         
+        # 원본 이미지 크기 저장
+        orig_width, orig_height = img_pil.size
+        
         # (D) 이미지 전처리(모델 입력 크기에 맞춰 리사이즈)
         resized_img = img_pil.resize((input_width, input_height), resample=Image.LANCZOS)
         
@@ -109,7 +112,7 @@ try:
         interpreter.invoke()
         mask = segment.get_output(interpreter)
 
-        # 디버깅 출력 (각 항목을 개별적으로 출력)
+        # 디버깅 출력
         print("Raw mask info:")
         print("Type:", type(mask))
         if hasattr(mask, 'shape'):
@@ -117,68 +120,72 @@ try:
         else:
             print("Shape: None")
         if hasattr(mask, 'dtype'):
-            print(f"Dtype: {type(mask)}")  # f-string 사용
+            print(f"Dtype: {type(mask)}")
         else:
             print("Dtype: None")
         
-        # 만약 mask가 4차원, 예: (1, 513, 513, num_classes) 라면 첫 번째 배치만 꺼내고 argmax
-        if mask.ndim == 4:
+        # 만약 mask가 4차원 (예: (1, 513, 513, num_classes)) 이라면 첫 번째 배치만 꺼내기
+        if isinstance(mask, np.ndarray) and mask.ndim == 4:
             # batch 차원 제거
             mask = mask[0]
             print("After removing batch dim:", mask.shape, mask.dtype)
         
-        if mask.ndim == 3:
-            # 채널 차원에 대해 argmax (num_classes 쪽)
+        # 채널 차원에 대해 argmax (num_classes 쪽)
+        if isinstance(mask, np.ndarray) and mask.ndim == 3:
             mask = np.argmax(mask, axis=-1)
             print("After argmax:", mask.shape, mask.dtype)
         
-        # 최종적으로 mask가 2D 배열이고 dtype이 float 또는 int 계열이면 np.uint8 변환 가능
-        mask = mask.astype(np.uint8)
-        print("Final mask shape, dtype:", mask.shape, mask.dtype)
-        
-        # PIL 변환
-        mask_pil = Image.fromarray(mask)
-        mask_pil = mask_pil.resize((orig_width, orig_height), resample=Image.NEAREST)
-        mask_np = np.array(mask_pil)
-        
-        # (G) 오버레이 이미지 만들기
-        orig_np = np.array(img_pil)
-        overlay_np = blend_mask(orig_np, mask_np, alpha=0.5)
-        
-        # (H) 시각화(원본, 세그멘트마스크, 오버레이) 후 저장
-        fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-        fig.suptitle(f"Segmentation Visualization - {img_filename}", fontsize=16)
-        
-        axes[0].imshow(orig_np)
-        axes[0].set_title("Original Image", fontsize=14)
-        axes[0].axis("off")
-        
-        color_mask_np = palette[mask_np]
-        axes[1].imshow(color_mask_np)
-        axes[1].set_title("Segmentation Mask", fontsize=14)
-        axes[1].axis("off")
-        
-        axes[2].imshow(overlay_np)
-        axes[2].set_title("Overlay", fontsize=14)
-        axes[2].axis("off")
-        
-        legend = fig.legend(
-            handles=legend_patches,
-            loc='center left',
-            bbox_to_anchor=(0.92, 0.5),
-            fontsize=12
-        )
-        legend.set_title("Classes", prop={'size': 14})
-        legend.get_frame().set_edgecolor("black")
-        
-        plt.tight_layout()
-        plt.subplots_adjust(right=0.85)
-        
-        out_fig_path = os.path.join(output_dir, f"{os.path.splitext(img_filename)[0]}_visual.png")
-        fig.savefig(out_fig_path)
-        plt.close(fig)
-        
-        print(f"Visualization result saved: {out_fig_path}")
+        # 최종적으로 mask가 2D 배열이고 dtype이 float 또는 int 계열이면 np.uint8 변환
+        if isinstance(mask, np.ndarray):
+            mask = mask.astype(np.uint8)
+            print("Final mask shape, dtype:", mask.shape, mask.dtype)
+            
+            # PIL 변환
+            mask_pil = Image.fromarray(mask)
+            mask_pil = mask_pil.resize((orig_width, orig_height), resample=Image.NEAREST)
+            mask_np = np.array(mask_pil)
+            
+            # (G) 오버레이 이미지 만들기
+            orig_np = np.array(img_pil)
+            overlay_np = blend_mask(orig_np, mask_np, alpha=0.5)
+            
+            # (H) 시각화(원본, 세그멘트마스크, 오버레이) 후 저장
+            fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+            fig.suptitle(f"Segmentation Visualization - {img_filename}", fontsize=16)
+            
+            axes[0].imshow(orig_np)
+            axes[0].set_title("Original Image", fontsize=14)
+            axes[0].axis("off")
+            
+            color_mask_np = palette[mask_np]
+            axes[1].imshow(color_mask_np)
+            axes[1].set_title("Segmentation Mask", fontsize=14)
+            axes[1].axis("off")
+            
+            axes[2].imshow(overlay_np)
+            axes[2].set_title("Overlay", fontsize=14)
+            axes[2].axis("off")
+            
+            legend = fig.legend(
+                handles=legend_patches,
+                loc='center left',
+                bbox_to_anchor=(0.92, 0.5),
+                fontsize=12
+            )
+            legend.set_title("Classes", prop={'size': 14})
+            legend.get_frame().set_edgecolor("black")
+            
+            plt.tight_layout()
+            plt.subplots_adjust(right=0.85)
+            
+            out_fig_path = os.path.join(output_dir, f"{os.path.splitext(img_filename)[0]}_visual.png")
+            fig.savefig(out_fig_path)
+            plt.close(fig)
+            
+            print(f"Visualization result saved: {out_fig_path}")
+        else:
+            print("Error: Unable to process the mask output from the model")
+            
         print(f"Waiting {interval_seconds} seconds for next capture...")
         time.sleep(interval_seconds)
 
