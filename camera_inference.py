@@ -107,7 +107,7 @@ try:
         # (E) 모델에 입력 후 추론
         common.set_input(interpreter, resized_img)
         interpreter.invoke()
-       mask = segment.get_output(interpreter)
+        mask = segment.get_output(interpreter)
 
         # 디버깅용 정보 출력
         print("Raw mask info:", type(mask), getattr(mask, 'shape', None), getattr(mask, 'dtype', None))
