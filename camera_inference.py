@@ -137,12 +137,12 @@ try:
         
         # 이미 mask가 numpy 배열이고 shape이 (513, 513, 6)이므로 argmax 진행
         mask = np.argmax(mask, axis=-1)
-        print("After argmax:", mask.shape, mask.dtype)
+        print("After argmax:", mask.shape)
         
         # 최종적으로 mask가 2D 배열이고 dtype이 float 또는 int 계열이면 np.uint8 변환
         if isinstance(mask, np.ndarray):
             mask = mask.astype(np.uint8)
-            print("Final mask shape, dtype:", mask.shape, mask.dtype)
+            print("Final mask shape, dtype:", mask.shape)
             
             # PIL 변환
             mask_pil = Image.fromarray(mask)
