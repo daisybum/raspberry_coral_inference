@@ -120,7 +120,7 @@ try:
         else:
             print("Shape: None")
         if hasattr(mask, 'dtype'):
-            print(f"Dtype: {type(mask)}")
+            print(f"Dtype: {mask.dtype}")  # 수정: type(mask) -> mask.dtype
         else:
             print("Dtype: None")
         
@@ -134,6 +134,10 @@ try:
         if isinstance(mask, np.ndarray) and mask.ndim == 3:
             mask = np.argmax(mask, axis=-1)
             print("After argmax:", mask.shape, mask.dtype)
+        
+        # 이미 mask가 numpy 배열이고 shape이 (513, 513, 6)이므로 argmax 진행
+        mask = np.argmax(mask, axis=-1)
+        print("After argmax:", mask.shape, mask.dtype)
         
         # 최종적으로 mask가 2D 배열이고 dtype이 float 또는 int 계열이면 np.uint8 변환
         if isinstance(mask, np.ndarray):
