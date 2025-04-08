@@ -109,8 +109,11 @@ try:
         interpreter.invoke()
         mask = segment.get_output(interpreter)
 
-        # 디버깅용 정보 출력
-        print("Raw mask info:", type(mask), getattr(mask, 'shape', None), getattr(mask, 'dtype', None))
+        # Debug output with safe printing
+        print("Raw mask info:")
+        print("Type:", type(mask))
+        print("Shape:", mask.shape if hasattr(mask, 'shape') else None)
+        print("Dtype:", mask.dtype if hasattr(mask, 'dtype') else None)
         
         # 만약 mask가 4차원, 예: (1, 513, 513, num_classes) 라면 첫 번째 배치만 꺼내고 argmax
         if mask.ndim == 4:
