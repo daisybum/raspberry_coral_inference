@@ -104,6 +104,8 @@ for image_info in coco_data['images']:
     if mask.ndim == 3:
         mask = np.argmax(mask, axis=-1)
 
+    mask = np.array(mask.tolist(), dtype=np.uint8)
+
     # (3) Resize mask to original size
     mask_pil = Image.fromarray(mask.astype(np.uint8))
     mask_pil = mask_pil.resize((orig_width, orig_height), resample=Image.NEAREST)
