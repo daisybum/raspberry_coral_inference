@@ -80,106 +80,106 @@ interval_seconds = 30  # 30초 간격
 print("Starting capture and inference every 30 seconds...")
 loop_count = 0
 
-try:
-    while True:
-        loop_count += 1
-        
-        # (A) 사진 파일명(타임스탬프)
-        timestamp_str = time.strftime("%Y%m%d_%H%M%S")
-        img_filename = f"capture_{timestamp_str}.jpg"
-        img_path = os.path.join(output_dir, img_filename)
-        
-        # (B) 카메라 촬영(libcamera-still)
-        os.system(f"libcamera-still -n -o {img_path} --width 1640 --height 1232")
-        
-        # (C) 촬영한 이미지 로드
-        if not os.path.exists(img_path):
-            print(f"[WARNING] Image was not generated: {img_path}")
-            time.sleep(interval_seconds)
-            continue
-        
-        print(f"\n[{loop_count}th iteration] New image: {img_path}")
-        img_pil = Image.open(img_path).convert('RGB')
-        
-        # 원본 이미지 크기 저장
-        orig_width, orig_height = img_pil.size
-        
-        # (D) 이미지 전처리(모델 입력 크기에 맞춰 리사이즈)
-        resized_img = img_pil.resize((input_width, input_height), resample=Image.LANCZOS)
-        
-        # (E) 모델에 입력 후 추론
-        common.set_input(interpreter, resized_img)
-        interpreter.invoke()
-        mask = segment.get_output(interpreter)
-
-        print("Raw mask info:")
-        print("Type:", type(mask))
-        if hasattr(mask, 'shape'):
-            print("Shape:", mask.shape)
-        
-        # 배치 차원이 있다면 제거
-        if isinstance(mask, np.ndarray) and mask.ndim == 4:
-            mask = mask[0]
-            print("After removing batch dim:", mask.shape, mask.dtype)
-        
-        # 3차원 배열일 경우에만 argmax 수행 (채널 축 제거)
-        if isinstance(mask, np.ndarray) and mask.ndim == 3:
-            mask = np.argmax(mask, axis=-1)
-            print("After argmax:", mask.shape, mask.dtype)
-        
-        # 최종적으로 mask가 2D 배열이고 dtype이 float 또는 int 계열이면 np.uint8 변환
-        if isinstance(mask, np.ndarray):
-            mask = mask.astype(np.uint8)
-            print("Final mask shape, dtype:", mask.shape)
-            
-            # PIL 변환
-            mask_pil = Image.fromarray(mask)
-            mask_pil = mask_pil.resize((orig_width, orig_height), resample=Image.NEAREST)
-            mask_np = np.array(mask_pil)
-            
-            # (G) 오버레이 이미지 만들기
-            orig_np = np.array(img_pil)
-            overlay_np = blend_mask(orig_np, mask_np, alpha=0.5)
-            
-            # (H) 시각화(원본, 세그멘트마스크, 오버레이) 후 저장
-            fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-            fig.suptitle(f"Segmentation Visualization - {img_filename}", fontsize=16)
-            
-            axes[0].imshow(orig_np)
-            axes[0].set_title("Original Image", fontsize=14)
-            axes[0].axis("off")
-            
-            color_mask_np = palette[mask_np]
-            axes[1].imshow(color_mask_np)
-            axes[1].set_title("Segmentation Mask", fontsize=14)
-            axes[1].axis("off")
-            
-            axes[2].imshow(overlay_np)
-            axes[2].set_title("Overlay", fontsize=14)
-            axes[2].axis("off")
-            
-            legend = fig.legend(
-                handles=legend_patches,
-                loc='center left',
-                bbox_to_anchor=(0.92, 0.5),
-                fontsize=12
-            )
-            legend.set_title("Classes", prop={'size': 14})
-            legend.get_frame().set_edgecolor("black")
-            
-            plt.tight_layout()
-            plt.subplots_adjust(right=0.85)
-            
-            out_fig_path = os.path.join(output_dir, f"{os.path.splitext(img_filename)[0]}_visual.png")
-            fig.savefig(out_fig_path)
-            plt.close(fig)
-            
-            print(f"Visualization result saved: {out_fig_path}")
-        else:
-            print("Error: Unable to process the mask output from the model")
-            
-        print(f"Waiting {interval_seconds} seconds for next capture...")
+# try:
+while True:
+    loop_count += 1
+    
+    # (A) 사진 파일명(타임스탬프)
+    timestamp_str = time.strftime("%Y%m%d_%H%M%S")
+    img_filename = f"capture_{timestamp_str}.jpg"
+    img_path = os.path.join(output_dir, img_filename)
+    
+    # (B) 카메라 촬영(libcamera-still)
+    os.system(f"libcamera-still -n -o {img_path} --width 1640 --height 1232")
+    
+    # (C) 촬영한 이미지 로드
+    if not os.path.exists(img_path):
+        print(f"[WARNING] Image was not generated: {img_path}")
         time.sleep(interval_seconds)
+        continue
+    
+    print(f"\n[{loop_count}th iteration] New image: {img_path}")
+    img_pil = Image.open(img_path).convert('RGB')
+    
+    # 원본 이미지 크기 저장
+    orig_width, orig_height = img_pil.size
+    
+    # (D) 이미지 전처리(모델 입력 크기에 맞춰 리사이즈)
+    resized_img = img_pil.resize((input_width, input_height), resample=Image.LANCZOS)
+    
+    # (E) 모델에 입력 후 추론
+    common.set_input(interpreter, resized_img)
+    interpreter.invoke()
+    mask = segment.get_output(interpreter)
 
-except KeyboardInterrupt:
-    print("\nCapture and inference loop has been terminated.")
+    print("Raw mask info:")
+    print("Type:", type(mask))
+    if hasattr(mask, 'shape'):
+        print("Shape:", mask.shape)
+    
+    # 배치 차원이 있다면 제거
+    if isinstance(mask, np.ndarray) and mask.ndim == 4:
+        mask = mask[0]
+        print("After removing batch dim:", mask.shape, mask.dtype)
+    
+    # 3차원 배열일 경우에만 argmax 수행 (채널 축 제거)
+    if isinstance(mask, np.ndarray) and mask.ndim == 3:
+        mask = np.argmax(mask, axis=-1)
+        print("After argmax:", mask.shape, mask.dtype)
+    
+    # 최종적으로 mask가 2D 배열이고 dtype이 float 또는 int 계열이면 np.uint8 변환
+    if isinstance(mask, np.ndarray):
+        mask = mask.astype(np.uint8)
+        print("Final mask shape, dtype:", mask.shape)
+        
+        # PIL 변환
+        mask_pil = Image.fromarray(mask)
+        mask_pil = mask_pil.resize((orig_width, orig_height), resample=Image.NEAREST)
+        mask_np = np.array(mask_pil)
+        
+        # (G) 오버레이 이미지 만들기
+        orig_np = np.array(img_pil)
+        overlay_np = blend_mask(orig_np, mask_np, alpha=0.5)
+        
+        # (H) 시각화(원본, 세그멘트마스크, 오버레이) 후 저장
+        fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+        fig.suptitle(f"Segmentation Visualization - {img_filename}", fontsize=16)
+        
+        axes[0].imshow(orig_np)
+        axes[0].set_title("Original Image", fontsize=14)
+        axes[0].axis("off")
+        
+        color_mask_np = palette[mask_np]
+        axes[1].imshow(color_mask_np)
+        axes[1].set_title("Segmentation Mask", fontsize=14)
+        axes[1].axis("off")
+        
+        axes[2].imshow(overlay_np)
+        axes[2].set_title("Overlay", fontsize=14)
+        axes[2].axis("off")
+        
+        legend = fig.legend(
+            handles=legend_patches,
+            loc='center left',
+            bbox_to_anchor=(0.92, 0.5),
+            fontsize=12
+        )
+        legend.set_title("Classes", prop={'size': 14})
+        legend.get_frame().set_edgecolor("black")
+        
+        plt.tight_layout()
+        plt.subplots_adjust(right=0.85)
+        
+        out_fig_path = os.path.join(output_dir, f"{os.path.splitext(img_filename)[0]}_visual.png")
+        fig.savefig(out_fig_path)
+        plt.close(fig)
+        
+        print(f"Visualization result saved: {out_fig_path}")
+    else:
+        print("Error: Unable to process the mask output from the model")
+        
+    print(f"Waiting {interval_seconds} seconds for next capture...")
+    time.sleep(interval_seconds)
+
+# except KeyboardInterrupt:
+#     print("\nCapture and inference loop has been terminated.")
