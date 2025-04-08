@@ -109,18 +109,15 @@ try:
         interpreter.invoke()
         mask = segment.get_output(interpreter)
 
-        # 디버깅 출력(각 항목을 개별적으로 출력)
+        # 디버깅 출력 (각 항목을 개별적으로 출력)
         print("Raw mask info:")
         print("Type:", type(mask))
-        
         if hasattr(mask, 'shape'):
             print("Shape:", mask.shape)
         else:
             print("Shape: None")
-        
         if hasattr(mask, 'dtype'):
-            mask_dtype = mask.dtype  # 임시 변수에 할당
-            print("Dtype:", mask_dtype)
+            print(f"Dtype: {mask.dtype}")  # f-string 사용
         else:
             print("Dtype: None")
         
