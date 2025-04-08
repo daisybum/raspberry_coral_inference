@@ -117,7 +117,7 @@ try:
         else:
             print("Shape: None")
         if hasattr(mask, 'dtype'):
-            print(f"Dtype: {mask.dtype}")  # f-string 사용
+            print(f"Dtype: {type(mask)}")  # f-string 사용
         else:
             print("Dtype: None")
         
