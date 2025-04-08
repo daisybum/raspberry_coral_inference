@@ -73,6 +73,7 @@ def process_image(img_path):
     mask = segment.get_output(interpreter)
     if mask.ndim == 3:
         mask = np.argmax(mask, axis=-1)
+    mask = np.array(mask.tolist(), dtype=np.uint8)
     
     # (3) 추론 결과 마스크를 원본 크기로 리사이즈 (최근접 보간법 사용)
     mask_pil = Image.fromarray(mask.astype(np.uint8))
