@@ -120,7 +120,7 @@ try:
         else:
             print("Shape: None")
         if hasattr(mask, 'dtype'):
-            print(f"Dtype: {mask.dtype}")  # 수정: type(mask) -> mask.dtype
+            print("Dtype: %s" % mask.dtype)
         else:
             print("Dtype: None")
         
