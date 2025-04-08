@@ -120,7 +120,7 @@ try:
         else:
             print("Shape: None")
         if hasattr(mask, 'dtype'):
-            print("Dtype: %s" % mask.dtype)
+            # print("Dtype: %s" % mask.dtype)
         else:
             print("Dtype: None")
         
