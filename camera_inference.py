@@ -19,7 +19,7 @@ from pycoral.adapters import common, segment
 
 # (A) 경로 관련
 model_path = 'model_quant_fixed_edgetpu.tflite'
-output_dir = '/workspace/output_visual'
+output_dir = './output_visual'
 os.makedirs(output_dir, exist_ok=True)
 
 # (B) TFLite Edge TPU 모델 로드 및 인터프리터 생성
