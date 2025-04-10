@@ -85,6 +85,7 @@ while True:
         mask = segment.get_output(interpreter)
         if mask.ndim == 3:
             mask = np.argmax(mask, axis=-1)
+        mask = np.array(mask.tolist(), dtype=np.uint8)
 
         visualize_and_save(img_pil.resize((1640, 1232), Image.LANCZOS), mask, img_filename)
 
