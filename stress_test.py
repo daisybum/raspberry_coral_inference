@@ -95,4 +95,5 @@ while True:
     else:
         logging.warning(f"Failed to capture {img_filename}")
 
+    logging.info("Waiting for 30 seconds before next capture...")
     time.sleep(30)
