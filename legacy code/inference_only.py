@@ -9,7 +9,7 @@ from pycoral.adapters import common, segment
 # 0) Path settings
 annotations_path = '/workspace/moveawheel_data/COCO/test_without_street.json'
 image_dir = '/workspace/moveawheel_data/images'
-model_path = 'model_quant_fixed_edgetpu.tflite'
+model_path = '../models/model_quant_fixed_edgetpu.tflite'
 
 # Load COCO format JSON file
 with open(annotations_path, 'r') as f:

@@ -1,0 +1,21 @@
+paths:
+  annotations: data/COCO/test_without_street.json
+  image_dir:   data/images
+  model:       models/model_quant_fixed_edgetpu.tflite
+  output_dir:  output_visual
+
+palette:
+  - [0,   0,   0]    # background
+  - [113, 193, 255]  # dry
+  - [255, 219, 158]  # humid
+  - [125, 255, 238]  # slush
+  - [235, 235, 235]  # snow
+  - [255,  61,  61]  # wet
+
+class_names:
+  - background
+  - dry
+  - humid
+  - slush
+  - snow
+  - wet

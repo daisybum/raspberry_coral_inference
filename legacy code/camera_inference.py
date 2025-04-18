@@ -1,4 +1,6 @@
 import os
+
+
 import time
 import numpy as np
 from PIL import Image
@@ -11,7 +13,7 @@ from pycoral.utils import edgetpu
 from pycoral.adapters import common, segment
 
 # 0) 경로 및 기본 설정
-model_path = 'model_quant_fixed_edgetpu.tflite'
+model_path = '../models/model_quant_fixed_edgetpu.tflite'
 capture_dir = './captured_images'
 output_dir = './output_visual'
 os.makedirs(capture_dir, exist_ok=True)
