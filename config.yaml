@@ -2,7 +2,7 @@ paths:
   annotations: /workspace/data/COCO/test_without_street.json
   image_dir:   /workspace/data/images
   model:       models/model_quant_fixed_edgetpu.tflite
-  output_dir:  output_visual
+  output_dir:  /workspace/output_visual
 
 palette:
   - [0,   0,   0]    # background
