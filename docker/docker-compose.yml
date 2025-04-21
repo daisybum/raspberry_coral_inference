@@ -3,7 +3,7 @@ services:
   coral_inference:
     build:
       context: ..
-      dockerfile: ./docker/Dockerfile_v2
+      dockerfile: ./docker/Dockerfile
     container_name: coral_inference
     privileged: true          # 필수: USB 장치 접근 허용 (권장 설정)
     volumes:
