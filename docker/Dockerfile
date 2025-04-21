@@ -36,7 +36,7 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false && \
         python3-tflite-runtime \
         python3-pip \
         python3-picamera2 \
-        libcamera-apps \            # libcamera‑still 포함
+        libcamera-apps\      # ← ‘\’ 뒤 공백 제거 또는 주석 줄 분리
         libhdf5-dev \
         pkg-config && \
     rm -rf /var/lib/apt/lists/*
