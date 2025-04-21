@@ -5,10 +5,14 @@ services:
       context: ..
       dockerfile: ./docker/Dockerfile
     container_name: coral_inference
-    privileged: true          # 필수: USB 장치 접근 허용 (권장 설정)
+    privileged: true          # 필수: USB 및 카메라 장치 접근 허용
+    devices:
+      - /dev/vchiq:/dev/vchiq  # 라즈베리파이 카메라 장치 마운트
     volumes:
       - /dev/bus/usb:/dev/bus/usb
       - "/mnt/usb:/workspace"
       - "../../raspberry_coral_inference:/app/code"
+    group_add:
+      - video                # 컨테이너에 video 그룹 추가
     command: tail -f /dev/null
     restart: unless-stopped
