@@ -6,6 +6,8 @@ services:
       dockerfile: ./docker/Dockerfile
     container_name: coral_inference
     privileged: true          # 필수: USB 장치 접근 허용 (권장 설정)
+    devices:
+      - /dev/video0:/dev/video0
     volumes:
       - /dev/bus/usb:/dev/bus/usb
       - "/mnt/usb:/workspace"
