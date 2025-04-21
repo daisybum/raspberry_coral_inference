@@ -49,8 +49,20 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
 RUN python -m pip install --upgrade pip setuptools wheel && \
     python -m pip install --extra-index-url https://google-coral.github.io/py-repo/ \
         pycoral~=2.0 && \
-    pip install --no-cache-dir \
-        tqdm pillow pycocotools pyyaml tensorflow
+
+# ─ pip 기본 타임아웃을 120초로 확대
+ENV PIP_DEFAULT_TIMEOUT=120
+
+# ─ 먼저 일반(소형) 패키지 설치 ─
+RUN pip install --no-cache-dir \
+       -i https://www.piwheels.org/simple \
+       tqdm pillow pycocotools pyyaml
+
+# ─ 대용량 tensorflow 단독 설치(재시도 옵션 포함) ─
+RUN pip install --no-cache-dir \
+       -i https://www.piwheels.org/simple \
+       --retries 5 --timeout 120 \
+       tensorflow
 
 # 5) 작업 디렉터리
 WORKDIR /app
