@@ -42,9 +42,7 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
     # 공통 휠 (piwheels 우선)
     pip install --prefer-binary \
         --extra-index-url https://www.piwheels.org/simple \
-        pillow tqdm pycocotools==2.0.8 numpy==1.26.3 && \
-    # ─ 선택: TensorFlow (PyPI 공식 aarch64 휠, 예: 2.18.0) ─
-    pip install --prefer-binary tensorflow==2.18.0 && \
+        pillow tqdm pycocotools==2.0.8 numpy==1.26.3 tensorflow && \
     # 남은 휠 캐시 제거
     rm -rf /root/.cache/pip
 
