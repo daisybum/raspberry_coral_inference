@@ -54,7 +54,6 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
         pillow \
         pycocotools \
         pyyaml \
-        numpy==1.26.3 \
         tensorflow
 
 # 5) 작업 디렉터리 설정
