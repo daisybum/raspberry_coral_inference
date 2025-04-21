@@ -1,6 +1,10 @@
 # Raspberry Pi Bullseye 64bit 환경용 Python 3.8 슬림 베이스 이미지
 FROM arm64v8/python:3.8-slim-bullseye
 
+# 이미지 메타데이터 (선택 사항)
+LABEL maintainer="your_email@example.com" \
+      description="Raspberry Pi Bullseye 환경에서 Coral EdgeTPU와 picamera2를 사용하기 위한 이미지"
+
 # 1) 비대화식 모드 설정 (APT 설치 시 대화창 방지)
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -14,18 +18,23 @@ RUN set -eux; \
         gnupg \
         build-essential; \
     \
-    # Coral EdgeTPU 관련 패키지 설치를 위한 저장소 등록 및 GPG 키 추가
-    echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" \
-         | tee /etc/apt/sources.list.d/coral-edgetpu.list; \
-    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -; \
+    # Coral EdgeTPU 저장소 GPG 키 추가 (apt-key 대신 trusted.gpg.d 사용)
+    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+        | gpg --dearmor -o /usr/share/keyrings/coral-edgetpu-archive-keyring.gpg; \
+    echo "deb [signed-by=/usr/share/keyrings/coral-edgetpu-archive-keyring.gpg] https://packages.cloud.google.com/apt coral-edgetpu-stable main" \
+        | tee /etc/apt/sources.list.d/coral-edgetpu.list; \
     \
-    # Raspberry Pi 전용 패키지 제공을 위한 저장소 추가 (예: picamera2)
-    echo "deb http://archive.raspberrypi.org/debian bullseye main" \
-         | tee /etc/apt/sources.list.d/raspi.list; \
-    curl -fsSL https://archive.raspberrypi.org/debian/raspberrypi.gpg.key | apt-key add -; \
+    # Raspberry Pi 저장소 GPG 키 추가 (apt-key 대신 trusted.gpg.d 사용)
+    curl -fsSL https://archive.raspberrypi.org/debian/raspberrypi.gpg.key \
+        | gpg --dearmor -o /usr/share/keyrings/raspberrypi-archive-keyring.gpg; \
+    echo "deb [signed-by=/usr/share/keyrings/raspberrypi-archive-keyring.gpg] http://archive.raspberrypi.org/debian bullseye main" \
+        | tee /etc/apt/sources.list.d/raspi.list; \
+    \
+    # 저장소 업데이트
+    apt-get update; \
     \
     # libcamera 빌드에 필요한 의존성 패키지 설치
-    apt-get update && apt-get install -y --no-install-recommends \
+    apt-get install -y --no-install-recommends \
         libboost-dev \
         libgnutls28-dev \
         openssl \
@@ -33,7 +42,7 @@ RUN set -eux; \
         pybind11-dev \
         qtbase5-dev \
         libqt5core5a \
-        libqt5widgets \
+        libqt5widgets5 \
         meson \
         cmake \
         python3-yaml \
