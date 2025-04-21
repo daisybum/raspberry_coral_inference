@@ -1,50 +1,61 @@
-# ──────────────────────────────────────────────────────────────
-# Raspberry Pi Bullseye 64‑bit · Python 3.9 Slim (ARM64)
-# ──────────────────────────────────────────────────────────────
-FROM --platform=linux/arm64/v8 arm64v8/python:3.9-slim-bullseye
+# Raspberry Pi Bullseye 64bit 환경용 Python 3.8 슬림 베이스 이미지
+FROM arm64v8/python:3.8-slim-bullseye
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    PIP_DEFAULT_TIMEOUT=2000 \
-    PIP_RETRIES=5
+# 이미지 메타데이터 (선택 사항)
+LABEL maintainer="your_email@example.com" \
+      description="Raspberry Pi Bullseye 환경에서 Coral EdgeTPU와 picamera2를 사용하기 위한 이미지"
 
-# 1) 핵심 빌드 도구 및 의존성 + Coral/RPi 저장소 추가
+# 1) 비대화식 모드 설정 (APT 설치 시 대화창 방지)
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 2) 필수 패키지 설치 및 저장소 등록
 RUN set -eux; \
-    # ─ apt 기본 툴 ─
-    apt-get update -o Acquire::Check-Valid-Until=false && \
-    apt-get install -y --no-install-recommends \
-        ca-certificates curl gnupg apt-transport-https build-essential \
-        libhdf5-dev pkg-config python3-dev cython3 && \
+    # 기본 패키지 설치 (APT 업데이트 후 필요한 도구들 설치)
+    apt-get update && apt-get install -y --no-install-recommends \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        gnupg \
+        build-essential; \
     \
-    # ─ Coral EdgeTPU repo & key ─
-    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/coral.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/coral.gpg] https://packages.cloud.google.com/apt coral-edgetpu-stable main" \
-        > /etc/apt/sources.list.d/coral-edgetpu.list && \
+    # Coral EdgeTPU 관련 패키지 설치를 위한 저장소 등록 및 GPG 키 추가
+    # 1) Google Coral EdgeTPU 저장소를 /etc/apt/sources.list.d/ 디렉토리에 등록하여, apt로 설치 가능하도록 합니다.
+    echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" \
+         | tee /etc/apt/sources.list.d/coral-edgetpu.list; \
+    # 2) 저장소의 GPG 키를 등록하여 패키지의 신뢰성을 검증합니다.
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -; \
     \
-    # ─ Raspberry Pi repo & key (picamera2 등) ─
-    curl -fsSL https://archive.raspberrypi.org/debian/raspberrypi.gpg.key | gpg --dearmor -o /usr/share/keyrings/raspi.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/raspi.gpg] http://archive.raspberrypi.org/debian bullseye main" \
-        > /etc/apt/sources.list.d/raspi.list && \
+    # Raspberry Pi 전용 패키지 제공을 위한 저장소 추가 (예: picamera2)
+    echo "deb http://archive.raspberrypi.org/debian bullseye main" \
+         | tee /etc/apt/sources.list.d/raspi.list; \
+    curl -fsSL https://archive.raspberrypi.org/debian/raspberrypi.gpg.key | apt-key add -; \
     \
-    # ─ EdgeTPU·카메라 런타임 ─
-    apt-get update -o Acquire::Check-Valid-Until=false && \
-    apt-get install -y --no-install-recommends \
-        libedgetpu1-std python3-tflite-runtime python3-picamera2 libcamera-apps && \
+    # 저장소 업데이트 후, Coral EdgeTPU 및 기타 필수 패키지 설치
+    apt-get update && apt-get install -y --no-install-recommends \
+        libedgetpu1-std \
+        python3-pycoral \
+        python3-tflite-runtime \
+        python3-pip \
+        pkg-config \
+        libhdf5-dev \
+        python3-picamera2; \
     \
-    # ─ 캐시 정리 ─
+    # APT 캐시 정리
     rm -rf /var/lib/apt/lists/*
 
-# 2) Python 패키지 (휠 사용해 빌드 시간 최소화)
-# piwheels 우선, 없으면 PyPI로 fallback
-RUN python -m pip install --upgrade pip setuptools wheel && \
-    # Coral 전용
-    python -m pip install --extra-index-url https://google-coral.github.io/py-repo/ \
-        pycoral~=2.0 && \
-    # 공통 휠 (piwheels 우선)
-    pip install --prefer-binary \
-        --extra-index-url https://www.piwheels.org/simple \
-        pillow tqdm pycocotools==2.0.8 numpy==1.26.3 tensorflow && \
-    # 남은 휠 캐시 제거
-    rm -rf /root/.cache/pip
+# 3) python 명령어를 python3와 동일하게 연결
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
+    update-alternatives --set python /usr/bin/python3
 
-# 3) 작업 디렉터리
+# 4) pip 최신화 및 추가 파이썬 라이브러리 설치
+RUN python -m pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir \
+        tqdm \
+        pillow \
+        pycocotools \
+        pyyaml \
+        numpy==1.26.3 \
+        tensorflow
+
+# 5) 작업 디렉터리 설정
 WORKDIR /app
