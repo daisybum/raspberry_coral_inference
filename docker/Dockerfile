@@ -34,16 +34,19 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 # 2) Python 패키지 (휠 사용해 빌드 시간 최소화)
+# piwheels 우선, 없으면 PyPI로 fallback
 RUN python -m pip install --upgrade pip setuptools wheel && \
-    # ─ PyCoral (Coral 전용 인덱스) ─
-    python -m pip install --extra-index-url https://google-coral.github.io/py-repo/ pycoral~=2.0 && \
-    # ─ piwheels 휠 우선 설치 (pillow·tqdm·PyYAML 등) ─
-    pip install --prefer-binary -i https://www.piwheels.org/simple \
-        pillow tqdm && \
-    # ─ PyPI aarch64 휠 사용 (pycocotools 2.0.8, cp39‑aarch64) ─
-    pip install --prefer-binary pycocotools==2.0.8 && \
-    # ─ (선택) TensorFlow aarch64 휠 ─
-    pip install --prefer-binary -i https://www.piwheels.org/simple tensorflow
+    # Coral 전용
+    python -m pip install --extra-index-url https://google-coral.github.io/py-repo/ \
+        pycoral~=2.0 && \
+    # 공통 휠 (piwheels 우선)
+    pip install --prefer-binary \
+        --extra-index-url https://www.piwheels.org/simple \
+        pillow tqdm pycocotools==2.0.8 && \
+    # ─ 선택: TensorFlow (PyPI 공식 aarch64 휠, 예: 2.18.0) ─
+    pip install --prefer-binary tensorflow==2.18.0 && \
+    # 남은 휠 캐시 제거
+    rm -rf /root/.cache/pip
 
 # 3) 작업 디렉터리
 WORKDIR /app
