@@ -53,7 +53,6 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
         tqdm \
         pillow \
         pycocotools \
-        pyyaml \
         tensorflow
 
 # 5) 작업 디렉터리 설정
