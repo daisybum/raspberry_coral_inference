@@ -45,20 +45,26 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false && \
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
     update-alternatives --set python /usr/bin/python3
 
-# 4) 파이썬 패키지 (PIP 타임아웃 2000초)
+# 4) Python 패키지
 ENV PIP_DEFAULT_TIMEOUT=2000 \
     PIP_RETRIES=5
 
-# ─ 소형 패키지 + PyCoral ----------
+# 0. 빌드 전 필수 의존성(Cython, 헤더)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-dev cython3
+
+# 1. piwheels에서 가능한 패키지 + PyCoral
 RUN python -m pip install --upgrade pip setuptools wheel && \
     python -m pip install --extra-index-url https://google-coral.github.io/py-repo/ \
         pycoral~=2.0 && \
     pip install --no-cache-dir -i https://www.piwheels.org/simple \
-        tqdm pillow pyyaml
+        tqdm pillow
 
-# ─ pycocotools (소스 빌드) ----------
-RUN pip install --no-cache-dir --no-binary :all: pycocotools
-# tensorflow 가 필요하면 ↓ 한 줄 추가
+# 2. PyPI 원본에서 소스 빌드되는 패키지
+RUN pip install --no-cache-dir --no-binary :all: pyyaml pycocotools
+
+# 3. (선택) TensorFlow가 필요할 때
+#    ─ piwheels에는 aarch64 휠이 있으므로 그대로 설치
 RUN pip install --no-cache-dir -i https://www.piwheels.org/simple tensorflow
 
 # 5) 작업 디렉터리
