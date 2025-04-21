@@ -39,7 +39,7 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
     python -m pip install --extra-index-url https://google-coral.github.io/py-repo/ pycoral~=2.0 && \
     # ─ piwheels 휠 우선 설치 (pillow·tqdm·PyYAML 등) ─
     pip install --prefer-binary -i https://www.piwheels.org/simple \
-        pillow tqdm pyyaml && \
+        pillow tqdm && \
     # ─ PyPI aarch64 휠 사용 (pycocotools 2.0.8, cp39‑aarch64) ─
     pip install --prefer-binary pycocotools==2.0.8 && \
     # ─ (선택) TensorFlow aarch64 휠 ─
