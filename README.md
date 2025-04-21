@@ -15,8 +15,6 @@
 | **시각화** | 원본·마스크·오버레이 3‑패널 PNG 저장                      | `modes/bench_visual.py`          |
 | **실시간 카메라** | `libcamera-still` 주기 캡처 → 추론·시각화             | `modes/camera.py`                |
 | **COCO 메트릭** | PixelAcc / mIoU / Dice / FW‑IoU 계산           | `modes/metric.py`                |
-| **스트레스 테스트** | 장시간 추론, CPU 온도·추론 시간 로깅                      | `experiments/stress_test.py`     |
-| **센서별 라벨 EDA** | 다중 COCO json 병합 → 센서별 라벨 분포(%, CSV, PNG)     | `experiments/sensor_label_dist.py` |
 
 ---
 
