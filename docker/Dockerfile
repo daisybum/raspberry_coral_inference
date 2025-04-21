@@ -45,15 +45,19 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false && \
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
     update-alternatives --set python /usr/bin/python3
 
-# ── 4) 파이썬 패키지 ───────────────────────────────────────
-# 네트워크 속도가 느릴 때를 대비해 pip 타임아웃 확대
-ENV PIP_DEFAULT_TIMEOUT=2000
+# 4) 파이썬 패키지 (PIP 타임아웃 2000초)
+ENV PIP_DEFAULT_TIMEOUT=2000 \
+    PIP_RETRIES=5
 
+# ─ 소형 패키지 + PyCoral ----------
 RUN python -m pip install --upgrade pip setuptools wheel && \
     python -m pip install --extra-index-url https://google-coral.github.io/py-repo/ \
         pycoral~=2.0 && \
     pip install --no-cache-dir -i https://www.piwheels.org/simple \
-        tqdm pillow pycocotools pyyaml
+        tqdm pillow pyyaml
+
+# ─ pycocotools (소스 빌드) ----------
+RUN pip install --no-cache-dir --no-binary :all: pycocotools
 # tensorflow 가 필요하면 ↓ 한 줄 추가
 RUN pip install --no-cache-dir -i https://www.piwheels.org/simple tensorflow
 
