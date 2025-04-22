@@ -73,13 +73,7 @@ RUN set -eux; \
 
 # 4) libcamera 소스 클론 및 빌드
 RUN git clone https://github.com/raspberrypi/libcamera.git /libcamera && \
-    sed -i '1a\
-# --- Python 3.8 polyfill ---\n\
-if not hasattr(str, "removeprefix"):\n\
-    def _rp(self, prefix):\n\
-        return self[len(prefix):] if self.startswith(prefix) else self\n\
-    str.removeprefix = _rp\n' \
-        /libcamera/utils/codegen/gen-gst-controls.py && \
+    sed -i '/removeprefix/s/\(.*\)= kebab_case(\(.*\)\.removeprefix(\(.*\)))$/\1 = kebab_case((\2[len(\3):] if \2.startswith(\3) else \2))/' /libcamera/utils/codegen/gen-gst-controls.py && \
     cd /libcamera && \
     meson setup build --buildtype=release \
         -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp \
@@ -87,6 +81,7 @@ if not hasattr(str, "removeprefix"):\n\
         -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled \
         -Ddocumentation=disabled -Dpycamera=enabled && \
     ninja -C build install
+
 
 # 5) python 명령어를 python3와 동일하게 연결
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
