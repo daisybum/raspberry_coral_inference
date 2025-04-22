@@ -29,24 +29,11 @@ RUN set -eux; \
     # 저장소 업데이트
     apt-get update; \
     \
-    # libcamera 빌드에 필요한 의존성 패키지 설치
+    # libcamera 및 추가 의존성 패키지 설치
     apt-get install -y --no-install-recommends \
-        libboost-dev \
-        libgnutls28-dev \
-        openssl \
-        libtiff-dev \
-        pybind11-dev \
-        qtbase5-dev \
-        libqt5core5a \
-        libqt5widgets5 \
-        meson \
-        cmake \
-        python3-yaml \
-        python3-ply \
-        libglib2.0-dev \
-        libgstreamer-plugins-base1.0-dev \
-        git \
-        python3-pip; \
+        libboost-dev libgnutls28-dev openssl libtiff-dev pybind11-dev qtbase5-dev libqt5core5a libqt5widgets5 meson cmake python3-yaml python3-ply \
+        libglib2.0-dev libgstreamer-plugins-base1.0-dev git python3-pip \
+        ninja-build pkg-config libjpeg-dev libtiff5-dev libavcodec-dev libavformat-dev libswscale-dev libdrm-dev libexif-dev libudev-dev libyaml-cpp-dev python3-jinja2 libboost-program-options-dev libpng-dev; \
     \
     # libcamera 빌드에 필요한 Python 모듈 설치
     pip install --no-cache-dir \
@@ -64,15 +51,12 @@ RUN set -eux; \
         libedgetpu1-std \
         python3-pycoral \
         python3-tflite-runtime \
-        pkg-config \
         libhdf5-dev \
         python3-picamera2; \
-    \
-    # APT 캐시 정리
     rm -rf /var/lib/apt/lists/*
 
 # 4) libcamera 소스 클론 및 빌드
-RUN git clone https://github.com/raspberrypi/libcamera.git /libcamera && \
+RUN git clone https://git.libcamera.org/libcamera/libcamera.git /libcamera && \
     sed -i '/removeprefix/s/\(.*\)= kebab_case(\(.*\)\.removeprefix(\(.*\)))$/\1 = kebab_case((\2[len(\3):] if \2.startswith(\3) else \2))/' /libcamera/utils/codegen/gen-gst-controls.py && \
     cd /libcamera && \
     meson setup build --buildtype=release \
@@ -80,8 +64,8 @@ RUN git clone https://github.com/raspberrypi/libcamera.git /libcamera && \
         -Dv4l2=true -Dgstreamer=enabled -Dtest=false \
         -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled \
         -Ddocumentation=disabled -Dpycamera=enabled && \
-    ninja -C build install
-
+    ninja -C build install && \
+    echo "/usr/local/lib" > /etc/ld.so.conf.d/libcamera.conf && ldconfig
 
 # 5) python 명령어를 python3와 동일하게 연결
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
