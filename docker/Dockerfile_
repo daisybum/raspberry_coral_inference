@@ -78,7 +78,8 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
         pillow \
         pycocotools \
         pyyaml \
-        tensorflow
+        tensorflow && \
+    python3 -m pip install --extra-index-url https://google-coral.github.io/py-repo/ pycoral~=2.0
 
 # 7) 작업 디렉터리 설정
 WORKDIR /app
