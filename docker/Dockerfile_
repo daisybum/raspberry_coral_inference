@@ -59,11 +59,8 @@ RUN set -eux; \
 RUN git clone https://git.libcamera.org/libcamera/libcamera.git /libcamera && \
     sed -i '/removeprefix/s/\(.*\)= kebab_case(\(.*\)\.removeprefix(\(.*\)))$/\1 = kebab_case((\2[len(\3):] if \2.startswith(\3) else \2))/' /libcamera/utils/codegen/gen-gst-controls.py && \
     cd /libcamera && \
-    meson setup build --buildtype=release \
-        -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp \
-        -Dv4l2=true -Dgstreamer=enabled -Dtest=false \
-        -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled \
-        -Ddocumentation=disabled -Dpycamera=enabled && \
+    meson setup build && \
+    ninja -C build && \
     ninja -C build install && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/libcamera.conf && ldconfig
 
