@@ -48,7 +48,7 @@ def run_metric(cfg: Dict[str, Any], logger):
     """
     confusion matrix → PixelAcc, mIoU, Dice, FW IoU 출력
     """
-    from pycoral.utils import common, segment
+    from pycoral.adapters import common, segment
 
     pipe = SegmentationPipeline(cfg, skip_visualize=True)
     interp = pipe.interpreter
