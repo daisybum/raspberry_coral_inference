@@ -69,7 +69,7 @@ def run_camera(cfg: Dict[str, Any], logger, interval: int = 30):
         img = load_image(cap_path)
         resized = preprocess_for_model(img, (in_w, in_h))
 
-        from pycoral.utils import common, segment
+        from pycoral.adapters import common, segment
 
         common.set_input(interp, resized)
         interp.invoke()
