@@ -64,13 +64,9 @@ RUN git clone https://git.libcamera.org/libcamera/libcamera.git /libcamera && \
     ninja -C build install && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/libcamera.conf && ldconfig
 
-# 4-1) libcamera-apps 소스 클론 및 빌드  ←★ rpicam-apps → libcamera-apps 로 교체
-RUN git clone --depth 1 https://github.com/raspberrypi/libcamera-apps.git /libcamera-apps && \
-    cd /libcamera-apps && \
-    meson setup build && \
-    ninja -C build && \
-    ninja -C build install && \
-    echo "/usr/local/lib" > /etc/ld.so.conf.d/libcamera-apps.conf && ldconfig
+# 4-1) libcamera-apps 소스 클론 및 빌드 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libcamera-apps
 
 # 5) python 명령어를 python3와 동일하게 연결
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
