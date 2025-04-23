@@ -1,18 +1,35 @@
-version: '3.9'
+# docker/docker-compose.yml
+version: "3.9"
 services:
   coral_inference:
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
     container_name: coral_inference
-    privileged: true          # 필수: USB 및 카메라 장치 접근 허용
+
+    ## 1) 카메라 노드와 메모리 풀 전체 전달
+    privileged: true          # capabilities + cgroup rules
     devices:
-      - /dev/vchiq:/dev/vchiq  # 라즈베리파이 카메라 장치 마운트
+      - "/dev:/dev"           # ← /dev 전체를 그대로 넘겨도 되고,
+    #  또는 필요한 노드만 나열:
+    #  - "/dev/vchiq:/dev/vchiq"
+    #  - "/dev/video0:/dev/video0"
+    #  - "/dev/media0:/dev/media0"
+    #  - "/dev/v4l-subdev0:/dev/v4l-subdev0"
+    #  - "/dev/dma_heap:/dev/dma_heap"
+
+    ## 2) udev 이벤트 전달
     volumes:
-      - /dev/bus/usb:/dev/bus/usb
-      - "/mnt/usb:/workspace"
-      - "../../raspberry_coral_inference:/app/code"
+      - /run/udev:/run/udev:ro   # ★ 중요
+      - /mnt/usb:/workspace
+      - ../../raspberry_coral_inference:/app/code
+
+    ## 3) 성능/메모리
+    tmpfs:
+      - /dev/shm:size=64m,exec   # libcamera-vid 의 DMA 버퍼가 /dev/shm 사용
+
     group_add:
-      - video                # 컨테이너에 video 그룹 추가
+      - video
+
     command: tail -f /dev/null
     restart: unless-stopped
