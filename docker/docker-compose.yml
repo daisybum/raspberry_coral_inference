@@ -31,5 +31,4 @@ services:
     group_add:
       - video
 
-    command: tail -f /dev/null
     restart: unless-stopped
