@@ -82,5 +82,8 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
         tensorflow && \
     python3 -m pip install --extra-index-url https://google-coral.github.io/py-repo/ pycoral~=2.0
 
-# 7) 작업 디렉터리 설정
-WORKDIR /app
+# 7) 실행 파일 위치(코드 볼륨과 동일 폴더)로 작업 디렉터리 변경
+WORKDIR /app/code         
+
+# 8) 컨테이너 기동 시 바로 카메라 모드 실행
+ENTRYPOINT ["python", "-u", "inference.py", "--mode", "camera"]
