@@ -99,7 +99,7 @@ def run_metric(cfg: Dict[str, Any], logger):
 
     pa, miou, mdice, iou, dice, fwiou = _metrics(total_cm)
 
-    print("\n📊  최종 평가 결과\n")
+    print("[METRIC] Final evaluation results:")
     print("| Class       | IoU  | Dice |")
     print("|-------------|------|------|")
     for n, i, d in zip(class_names, iou, dice):
@@ -109,4 +109,4 @@ def run_metric(cfg: Dict[str, Any], logger):
     print(f"PixelAcc  : {pa:.4f}")
     print(f"FW IoU    : {fwiou:.4f}")
 
-    logger.info("✅  메트릭 계산 완료")
+    logger.info("[METRIC] Metric calculation completed successfully")

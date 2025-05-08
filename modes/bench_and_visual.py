@@ -29,12 +29,12 @@ def run_bench(cfg: Dict[str, Any], logger):
         dt = time.time() - t0
         elapsed_sum += dt
         total += 1
-        logger.info(f"{info['file_name']:<40} {dt*1000:7.2f} ms")
+        logger.info(f"[BENCH] Processing image: {info['file_name']:<40} inference time: {dt*1000:7.2f} ms")
 
     if total:
         logger.info(
-            f"⚡ 평균 추론 시간: {elapsed_sum/total*1000:.2f} ms "
-            f"({total} images)"
+            f"[BENCH] Benchmark complete - Average inference time: {elapsed_sum/total*1000:.2f} ms "
+            f"across {total} images"
         )
 
 
@@ -47,4 +47,4 @@ def run_visual(cfg: Dict[str, Any], logger):
     pipe = SegmentationPipeline(cfg, skip_visualize=False)
     coco = load_coco_annotations(cfg["paths"]["annotations"])
     pipe.run(coco)
-    logger.info("✅  시각화 완료")
+    logger.info("[VISUAL] Visualization process completed successfully")

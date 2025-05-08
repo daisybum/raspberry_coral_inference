@@ -42,7 +42,7 @@ def run_camera(cfg: Dict[str, Any], logger, interval: int = 30):
     os.makedirs(cap_dir, exist_ok=True)
     os.makedirs(out_dir, exist_ok=True)
 
-    logger.info(f"📷  카메라 모드 시작 – {interval}s 간격")
+    logger.info(f"[CAMERA] Camera mode started - capture interval: {interval}s")
 
     while True:
         ts = time.strftime("%Y%m%d_%H%M%S")
@@ -63,7 +63,7 @@ def run_camera(cfg: Dict[str, Any], logger, interval: int = 30):
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
         if not os.path.isfile(cap_path):
-            logger.warning("⚠  이미지 캡처 실패"); time.sleep(interval); continue
+            logger.warning("[CAMERA] Image capture failed"); time.sleep(interval); continue
 
         # ── 추론 & 시각화
         img = load_image(cap_path)
@@ -89,5 +89,5 @@ def run_camera(cfg: Dict[str, Any], logger, interval: int = 30):
             legend,
             out_dir,
         )
-        logger.info(f"💾  저장 → {out_path}")
+        logger.info(f"[CAMERA] Image processed and saved to: {out_path}")
         time.sleep(interval)

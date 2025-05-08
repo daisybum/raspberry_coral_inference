@@ -53,7 +53,7 @@ class SegmentationPipeline:
         self.interpreter = edgetpu.make_interpreter(self.paths["model"])
         self.interpreter.allocate_tensors()
         self.in_w, self.in_h = common.input_size(self.interpreter)
-        self.logger.info(f"Interpreter ready – input {self.in_w}×{self.in_h}")
+        self.logger.info(f"[PIPELINE] Interpreter initialized successfully - input dimensions: {self.in_w}x{self.in_h}")
 
         # 범례 패치
         self.legend_patches = create_legend_patches(
@@ -124,11 +124,11 @@ class SegmentationPipeline:
                 processed += 1
                 elapsed_sum += dt
                 self.logger.info(
-                    f"[{processed}/{total}] {info['file_name']} – {dt:.2f}s"
+                    f"[PIPELINE] Processing image {processed}/{total}: {info['file_name']} - inference time: {dt:.2f}s"
                 )
 
         if processed:
             avg = elapsed_sum / processed
             self.logger.info(
-                f"✅  완료: {processed}/{total} 장, 평균 {avg:.2f}s"
+                f"[PIPELINE] Processing complete: {processed}/{total} images processed, average time per image: {avg:.2f}s"
             )
