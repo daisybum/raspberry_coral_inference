@@ -105,6 +105,7 @@ class SegmentationPipeline:
                 overlay,
                 self.legend_patches,
                 self.paths["output_dir"],
+                save_image=False
             )
 
         return time.time() - t0

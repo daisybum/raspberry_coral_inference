@@ -88,6 +88,7 @@ def run_camera(cfg: Dict[str, Any], logger, interval: int = 30):
             overlay,
             legend,
             out_dir,
+            save_image=False
         )
         logger.info(f"[CAMERA] Image processed and saved to: {out_path}")
         time.sleep(interval)

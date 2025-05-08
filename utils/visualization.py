@@ -36,9 +36,22 @@ def visualize_and_save(
     overlay: np.ndarray,
     legend_patches: List[mpatches.Patch],
     output_dir: str,
+    save_image: bool = True,
 ) -> str:
     """
     원본/마스크/오버레이 3분할 이미지 저장 후 경로 문자열 반환.
+    
+    Parameters:
+        file_name: Name of the file being processed
+        orig: Original image as numpy array
+        color_mask: Colorized mask as numpy array
+        overlay: Overlay image as numpy array
+        legend_patches: Legend patches for the visualization
+        output_dir: Directory to save the output image
+        save_image: If True, save the visualization to a file; if False, just create the figure without saving
+    
+    Returns:
+        Path to the saved image or a placeholder string if save_image is False
     """
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
     fig.suptitle(f"Segmentation – {file_name}", fontsize=16)
@@ -59,10 +72,13 @@ def visualize_and_save(
     plt.tight_layout()
     plt.subplots_adjust(right=0.85)
 
-    os.makedirs(output_dir, exist_ok=True)
     out_path = os.path.join(
         output_dir, f"{os.path.splitext(file_name)[0]}_visual.png"
     )
-    fig.savefig(out_path)
+    
+    if save_image:
+        os.makedirs(output_dir, exist_ok=True)
+        fig.savefig(out_path)
+    
     plt.close(fig)
-    return out_path
+    return out_path if save_image else "[Visualization created but not saved]"
