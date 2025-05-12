@@ -14,13 +14,14 @@ from __future__ import annotations
 import os
 import time
 import glob
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import statistics
 
 import numpy as np
 
 from pipeline import SegmentationPipeline
-from utils.image_utils import load_image, preprocess_for_model
+from utils.image_utils import load_image, preprocess_for_model, resize_mask, colorize_mask, blend_mask
+from utils.visualization import create_legend_patches, visualize_and_save
 from utils.timer import elapsed
 
 
@@ -35,10 +36,17 @@ def get_image_files(data_dir: str) -> List[str]:
     return sorted(image_files)
 
 
-def process_image(pipeline: SegmentationPipeline, image_path: str) -> float:
+def process_image(pipeline: SegmentationPipeline, image_path: str, visualize: bool = False) -> float:
     """
     단일 이미지 추론 처리
-    반환값: 처리 시간(초)
+    
+    Parameters:
+        pipeline: 세그멘테이션 파이프라인 인스턴스
+        image_path: 처리할 이미지 경로
+        visualize: 시각화 코드 실행 여부 (파일 저장은 하지 않음)
+        
+    Returns:
+        처리 시간(초)
     """
     t0 = time.time()
     
@@ -52,14 +60,43 @@ def process_image(pipeline: SegmentationPipeline, image_path: str) -> float:
     resized = preprocess_for_model(pil_img, (in_w, in_h))
     raw_mask = pipeline._infer_mask(resized)
     
-    # 후처리 (시각화 없이 마스크만 생성)
-    from utils.image_utils import resize_mask
+    # 후처리
     mask_full = resize_mask(raw_mask, (width, height))
+    
+    # 시각화 (메모리에서만 실행, 파일 저장 안 함)
+    if visualize:
+        orig_np = np.array(pil_img)
+        color_mask = colorize_mask(mask_full, pipeline.palette)
+        overlay = blend_mask(orig_np, mask_full, pipeline.palette)
+        
+        # 시각화 코드 실행만 하고 저장은 하지 않음
+        import matplotlib.pyplot as plt
+        fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+        fig.suptitle(f"Segmentation – {file_name}", fontsize=16)
+
+        titles = ["Original", "Mask", "Overlay"]
+        images = [orig_np, color_mask, overlay]
+        for ax, img, title in zip(axes, images, titles):
+            ax.imshow(img)
+            ax.set_title(title, fontsize=14)
+            ax.axis("off")
+
+        fig.legend(
+            handles=pipeline.legend_patches,
+            loc="center left",
+            bbox_to_anchor=(0.92, 0.5),
+            fontsize=12,
+        )
+        plt.tight_layout()
+        plt.subplots_adjust(right=0.85)
+        
+        # 그림 닫기 (메모리 해제)
+        plt.close(fig)
     
     return time.time() - t0
 
 
-def run_stress_test(cfg: Dict[str, Any], logger, interval: int = 0, iterations: int = None):
+def run_stress_test(cfg: Dict[str, Any], logger, interval: int = 0, iterations: int = None, visualize: bool = False):
     """
     데이터 폴더 내 이미지를 무한 반복 추론하는 스트레스 테스트
     
@@ -68,14 +105,18 @@ def run_stress_test(cfg: Dict[str, Any], logger, interval: int = 0, iterations: 
         logger: 로거 인스턴스
         interval: 이미지 처리 간 대기 시간(초), 0이면 대기 없음
         iterations: 반복 횟수 제한, None이면 무한 반복
+        visualize: 시각화 코드 실행 여부 (파일 저장은 하지 않음)
     """
     # 데이터 폴더 경로
     data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
     
     logger.info(f"Starting stress test on images in {data_dir}")
     
-    # 파이프라인 초기화 (시각화 생략)
-    pipeline = SegmentationPipeline(cfg, skip_visualize=True)
+    # 파이프라인 초기화
+    pipeline = SegmentationPipeline(cfg, skip_visualize=(not visualize))
+    
+    if visualize:
+        logger.info("Visualization enabled (in-memory only, no files will be saved)")
     
     # 이미지 파일 목록 가져오기
     image_files = get_image_files(data_dir)
@@ -102,7 +143,7 @@ def run_stress_test(cfg: Dict[str, Any], logger, interval: int = 0, iterations: 
                 logger.info(f"Processing image {idx+1}/{len(image_files)}: {file_name}")
                 
                 try:
-                    dt = process_image(pipeline, image_path)
+                    dt = process_image(pipeline, image_path, visualize)
                     inference_times.append(dt)
                     iteration_times.append(dt)
                     total_inferences += 1

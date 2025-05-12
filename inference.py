@@ -51,6 +51,9 @@ def main():
     parser.add_argument(
         "--iterations", type=int, default=None, help="Number of iterations for stress test (None=infinite)"
     )
+    parser.add_argument(
+        "--visualize", action="store_true", help="Enable visualization for stress test mode"
+    )
     args = parser.parse_args()
 
     cfg = load_cfg(args.config)
@@ -63,7 +66,7 @@ def main():
     elif args.mode == "camera":
         MODE_TABLE["camera"](cfg, logger, args.interval)
     elif args.mode == "stress":
-        MODE_TABLE["stress"](cfg, logger, args.interval, args.iterations)
+        MODE_TABLE["stress"](cfg, logger, args.interval, args.iterations, args.visualize)
 
 
 if __name__ == "__main__":
