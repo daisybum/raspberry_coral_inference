@@ -86,4 +86,4 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
 WORKDIR /app/code         
 
 # 8) 컨테이너 기동 시 바로 스트레스 테스트 모드 실행
-ENTRYPOINT ["python", "-u", "inference.py", "--mode", "stress", "--interval", "30", "--iterations", "None"]
+ENTRYPOINT ["python", "-u", "inference.py", "--mode", "stress", "--interval", "30"]
