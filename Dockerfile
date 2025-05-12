@@ -85,5 +85,5 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
 # 7) 실행 파일 위치(코드 볼륨과 동일 폴더)로 작업 디렉터리 변경
 WORKDIR /app/code         
 
-# 8) 컨테이너 기동 시 바로 카메라 모드 실행
-ENTRYPOINT ["python", "-u", "inference.py", "--mode", "camera"]
+# 8) 컨테이너 기동 시 바로 스트레스 테스트 모드 실행
+ENTRYPOINT ["python", "-u", "inference.py", "--mode", "stress", "--interval", "30", "--iterations", "None"]

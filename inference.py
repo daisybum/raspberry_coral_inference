@@ -4,7 +4,7 @@ inference.py
 ──────────────────────────────────────────────────────────────
 공통 CLI 엔트리포인트
 
---mode {bench|visual|camera|metric} 로 실행 기능 선택
+--mode {bench|visual|camera|metric|stress} 로 실행 기능 선택
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from utils.logger import get_logger
 from modes.bench_and_visual import run_bench, run_visual
 from modes.camera import run_camera
 from modes.metric import run_metric
+from modes.stress_test import run_stress_test
 
 # 모드 → 실행 함수 매핑
 MODE_TABLE = {
@@ -23,6 +24,7 @@ MODE_TABLE = {
     "visual": run_visual,
     "camera": run_camera,
     "metric": run_metric,
+    "stress": run_stress_test,
 }
 
 
@@ -44,7 +46,10 @@ def main():
         help="Select execution mode",
     )
     parser.add_argument(
-        "--interval", type=int, default=30, help="Capture interval (seconds) for camera mode"
+        "--interval", type=int, default=30, help="Capture interval (seconds) for camera/stress mode"
+    )
+    parser.add_argument(
+        "--iterations", type=int, default=None, help="Number of iterations for stress test (None=infinite)"
     )
     args = parser.parse_args()
 
@@ -57,6 +62,8 @@ def main():
         MODE_TABLE[args.mode](cfg, logger)
     elif args.mode == "camera":
         MODE_TABLE["camera"](cfg, logger, args.interval)
+    elif args.mode == "stress":
+        MODE_TABLE["stress"](cfg, logger, args.interval, args.iterations)
 
 
 if __name__ == "__main__":
