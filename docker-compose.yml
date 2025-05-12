@@ -1,10 +1,10 @@
-# docker/docker-compose.yml
+# docker-compose.yml
 version: "3.9"
 services:
   coral_inference:
     build:
-      context: ..
-      dockerfile: ./docker/Dockerfile
+      context: .
+      dockerfile: ./Dockerfile
     container_name: coral_inference
 
     ## 1) 카메라 노드와 메모리 풀 전체 전달
@@ -22,7 +22,7 @@ services:
     volumes:
       - /run/udev:/run/udev:ro   # ★ 중요
       - /mnt/usb:/workspace
-      - ../../raspberry_coral_inference:/app/code
+      - .:/app/code
 
     ## 3) 성능/메모리
     tmpfs:
