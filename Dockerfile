@@ -45,7 +45,6 @@ RUN set -eux; \
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends --fix-missing \
-        python3-tflite-runtime \
         libhdf5-dev \
         python3-picamera2; \
     rm -rf /var/lib/apt/lists/*
@@ -74,7 +73,7 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
         pillow \
         pycocotools \
         pyyaml \
-        tensorflow
+        tflite-runtime==2.10.0
 
 # 7) 실행 파일 위치(코드 볼륨과 동일 폴더)로 작업 디렉터리 변경
 WORKDIR /app/code         
