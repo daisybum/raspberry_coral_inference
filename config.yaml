@@ -1,7 +1,7 @@
 paths:
   annotations: /workspace/data/COCO/test_without_street.json
   image_dir:   /workspace/data/images
-  model:       models/model_quant_fixed_edgetpu.tflite
+  model:       models/seg_model_sensor_int8.tflite
   output_dir:  /workspace/output_visual
 
 palette:
