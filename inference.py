@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import yaml
+import os
 
 from utils.logger import get_logger
 from modes.bench_and_visual import run_bench, run_visual
@@ -54,7 +55,20 @@ def main():
     parser.add_argument(
         "--visualize", action="store_true", help="Enable visualization for stress test mode"
     )
+    parser.add_argument(
+        "--core",
+        type=int,
+        default=None,
+        help="Number of CPU threads to use (overrides NUM_THREADS env)",
+    )
     args = parser.parse_args()
+
+    # ── 스레드 수 환경변수 적용 (SegmentationPipeline 생성 전에!)
+    if args.core is not None and args.core > 0:
+        import pipeline as pl
+
+        os.environ["NUM_THREADS"] = str(args.core)
+        pl.NUM_THREADS = args.core  # type: ignore[attr-defined]
 
     cfg = load_cfg(args.config)
     logger = get_logger("Main")
