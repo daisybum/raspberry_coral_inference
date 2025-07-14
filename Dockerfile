@@ -20,11 +20,14 @@ RUN set -eux; \
     echo "deb [signed-by=/usr/share/keyrings/raspberrypi-archive-keyring.gpg] http://archive.raspberrypi.org/debian bullseye main" \
         | tee /etc/apt/sources.list.d/raspi.list; \
     \
+    # APT 재시도 옵션 설정 (네트워크 타임아웃 대비)
+    echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries; \
+    \
     # 저장소 업데이트
     apt-get update; \
     \
     # libcamera 및 추가 의존성 패키지 설치
-    apt-get install -y --no-install-recommends \
+    apt-get install -y --no-install-recommends --fix-missing \
         libboost-dev libgnutls28-dev openssl libtiff-dev pybind11-dev qtbase5-dev libqt5core5a libqt5widgets5 meson cmake python3-yaml python3-ply \
         libglib2.0-dev libgstreamer-plugins-base1.0-dev git python3-pip \
         ninja-build pkg-config libjpeg-dev libtiff5-dev libavcodec-dev libavformat-dev libswscale-dev libdrm-dev libexif-dev libudev-dev libyaml-cpp-dev python3-jinja2 libboost-program-options-dev libpng-dev; \
@@ -41,7 +44,7 @@ RUN set -eux; \
 # 3) 추가 필수 패키지(tflite-runtime 등) 설치
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends \
+    apt-get install -y --no-install-recommends --fix-missing \
         python3-tflite-runtime \
         libhdf5-dev \
         python3-picamera2; \
