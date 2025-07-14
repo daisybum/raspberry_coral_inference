@@ -17,7 +17,6 @@ from PIL import Image
 from pipeline import SegmentationPipeline
 from utils.image_utils import (
     load_image,
-    preprocess_for_model,
     resize_mask,
     colorize_mask,
     blend_mask,
@@ -39,8 +38,6 @@ def run_camera(cfg: Dict[str, Any], logger, interval: int = 30, save_captured: b
         delete_after: 추론 후 캡처된 이미지를 삭제할지 여부
     """
     pipe = SegmentationPipeline(cfg, skip_visualize=True)
-    interp = pipe.interpreter
-    in_w, in_h = pipe.in_w, pipe.in_h
     palette = pipe.palette
     legend = pipe.legend_patches
 
@@ -77,17 +74,10 @@ def run_camera(cfg: Dict[str, Any], logger, interval: int = 30, save_captured: b
         if not os.path.isfile(cap_path):
             logger.warning("[CAMERA] Image capture failed"); time.sleep(interval); continue
 
-        # ── 추론 & 시각화
+        # ── 추론 & 시각화 (SegmentationPipeline 이용 – CPU)
         img = load_image(cap_path)
-        resized = preprocess_for_model(img, (in_w, in_h))
 
-        from pycoral.adapters import common, segment
-
-        common.set_input(interp, resized)
-        interp.invoke()
-        raw_mask = segment.get_output(interp)
-        if raw_mask.ndim == 3:
-            raw_mask = np.argmax(raw_mask, axis=-1)
+        raw_mask = pipe._infer_mask(img)  # sensor 정보 없음
 
         mask_full = resize_mask(raw_mask, img.size)  # img.size = (W,H)
         color_mask = colorize_mask(mask_full, palette)

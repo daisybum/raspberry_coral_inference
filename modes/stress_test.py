@@ -20,7 +20,7 @@ import statistics
 import numpy as np
 
 from pipeline import SegmentationPipeline
-from utils.image_utils import load_image, preprocess_for_model, resize_mask, colorize_mask, blend_mask
+from utils.image_utils import load_image, resize_mask, colorize_mask, blend_mask
 from utils.visualization import create_legend_patches, visualize_and_save
 from utils.timer import elapsed
 
@@ -55,10 +55,8 @@ def process_image(pipeline: SegmentationPipeline, image_path: str, visualize: bo
     file_name = os.path.basename(image_path)
     width, height = pil_img.size
     
-    # 전처리 & 추론
-    in_w, in_h = pipeline.in_w, pipeline.in_h
-    resized = preprocess_for_model(pil_img, (in_w, in_h))
-    raw_mask = pipeline._infer_mask(resized)
+    # Segmentation 추론 (sensor 정보 없음)
+    raw_mask = pipeline._infer_mask(pil_img)
     
     # 후처리
     mask_full = resize_mask(raw_mask, (width, height))

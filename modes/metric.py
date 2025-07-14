@@ -21,6 +21,7 @@ from utils.image_utils import (
     preprocess_for_model,
     resize_mask,
 )
+from pipeline import _sensor_to_vec
 
 # ─────────────────────────────────────────────────────────────
 def _confusion(gt: np.ndarray, pred: np.ndarray, n_cls: int):
@@ -48,11 +49,8 @@ def run_metric(cfg: Dict[str, Any], logger):
     """
     confusion matrix → PixelAcc, mIoU, Dice, FW IoU 출력
     """
-    from pycoral.adapters import common, segment
-
     pipe = SegmentationPipeline(cfg, skip_visualize=True)
-    interp = pipe.interpreter
-    in_w, in_h = pipe.in_w, pipe.in_h
+    # pipe 내부 interpreter는 직접 사용하지 않고 helper 호출
 
     coco = load_coco_annotations(cfg["paths"]["annotations"])
 
@@ -70,11 +68,8 @@ def run_metric(cfg: Dict[str, Any], logger):
 
         # ── 예측 마스크
         img = load_image(img_path)
-        resized = preprocess_for_model(img, (in_w, in_h))
-        common.set_input(interp, resized); interp.invoke()
-        raw_mask = segment.get_output(interp)
-        if raw_mask.ndim == 3:
-            raw_mask = np.argmax(raw_mask, axis=-1)
+        sensor_vec = _sensor_to_vec(info.get("sensor_info", {}))
+        raw_mask = pipe._infer_mask(img, sensor_vec)
         pred_mask = resize_mask(raw_mask, (info["width"], info["height"]))
 
         # ── GT 마스크
