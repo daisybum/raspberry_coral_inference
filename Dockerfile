@@ -73,7 +73,7 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
         pillow \
         pycocotools \
         pyyaml \
-        tflite-runtime==2.10.0
+        tflite-runtime==2.11.0
 
 # 7) 실행 파일 위치(코드 볼륨과 동일 폴더)로 작업 디렉터리 변경
 WORKDIR /app/code         
