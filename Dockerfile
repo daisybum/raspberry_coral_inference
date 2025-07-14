@@ -14,12 +14,6 @@ RUN set -eux; \
         gnupg \
         build-essential; \
     \
-    # Coral EdgeTPU 저장소 GPG 키 추가
-    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg \
-        | gpg --dearmor -o /usr/share/keyrings/coral-edgetpu-archive-keyring.gpg; \
-    echo "deb [signed-by=/usr/share/keyrings/coral-edgetpu-archive-keyring.gpg] https://packages.cloud.google.com/apt coral-edgetpu-stable main" \
-        | tee /etc/apt/sources.list.d/coral-edgetpu.list; \
-    \
     # Raspberry Pi 저장소 GPG 키 추가
     curl -fsSL https://archive.raspberrypi.org/debian/raspberrypi.gpg.key \
         | gpg --dearmor -o /usr/share/keyrings/raspberrypi-archive-keyring.gpg; \
@@ -44,12 +38,10 @@ RUN set -eux; \
     # APT 캐시 정리
     rm -rf /var/lib/apt/lists/*
 
-# 3) Coral EdgeTPU 및 기타 필수 패키지 설치
+# 3) 추가 필수 패키지(tflite-runtime 등) 설치
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        libedgetpu1-std \
-        python3-pycoral \
         python3-tflite-runtime \
         libhdf5-dev \
         python3-picamera2; \
@@ -79,8 +71,7 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
         pillow \
         pycocotools \
         pyyaml \
-        tensorflow && \
-    python3 -m pip install --extra-index-url https://google-coral.github.io/py-repo/ pycoral~=2.0
+        tensorflow
 
 # 7) 실행 파일 위치(코드 볼륨과 동일 폴더)로 작업 디렉터리 변경
 WORKDIR /app/code         

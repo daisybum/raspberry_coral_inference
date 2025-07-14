@@ -1,11 +1,11 @@
 # docker-compose.yml
 version: "3.9"
 services:
-  coral_inference:
+  pi_inference:
     build:
       context: .
       dockerfile: ./Dockerfile
-    container_name: coral_inference
+    container_name: pi_inference
 
     ## 1) 카메라 노드와 메모리 풀 전체 전달
     privileged: true          # capabilities + cgroup rules
