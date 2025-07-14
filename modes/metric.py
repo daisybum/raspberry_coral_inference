@@ -8,6 +8,7 @@ PixelAcc · mIoU · Dice · FW IoU 등을 계산.
 from __future__ import annotations
 
 import os
+import sys
 from typing import Dict, Any
 
 import numpy as np
@@ -61,7 +62,7 @@ def run_metric(cfg: Dict[str, Any], logger):
 
     total_cm = np.zeros((n_cls, n_cls), dtype=np.int64)
 
-    for info in tqdm(coco["images"], desc="Metric"):
+    for info in tqdm(coco["images"], desc="Metric", mininterval=5, file=sys.stdout):
         img_path = os.path.join(cfg["paths"]["image_dir"], info["file_name"])
         if not os.path.isfile(img_path):
             continue
