@@ -20,9 +20,12 @@ def load_image(path: str) -> Image.Image:
 
 def resize_image(img: Image.Image, size: Tuple[int, int]) -> Image.Image:
     """
-    PIL 이미지를 주어진 (W, H) size로 LANCZOS 리샘플링해 리턴.
+    PIL 이미지를 주어진 (W, H) size로 **BILINEAR** 리샘플링해 리턴.
+
+    모델 학습·PC 측 전처리와 동일하게 맞추기 위해 변경
+    (기존 LANCZOS → BILINEAR).
     """
-    return img.resize(size, resample=Image.LANCZOS)
+    return img.resize(size, resample=Image.BILINEAR)
 
 
 # ────────────────────────────────────────────────────────────
